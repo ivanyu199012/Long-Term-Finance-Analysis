@@ -55,4 +55,4 @@ HEIGHT_RATIOS: list[int] = [3, 1]
 
 # ── Output ──────────────────────────────────────────────────────────
 
-OUTPUT_FILE: str = "combined_chart.png"
+OUTPUT_FILE: str = "combined_chart.html"
