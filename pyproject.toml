@@ -1,0 +1,13 @@
+[project]
+name = "finanalysis"
+version = "0.1.0"
+description = "Technical-analysis chart generator for market tickers."
+requires-python = ">=3.10"
+dependencies = [
+    "yfinance>=0.2",
+    "matplotlib>=3.7",
+    "pandas>=2.0",
+]
+
+[project.scripts]
+finanalysis = "main:main"
