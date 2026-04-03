@@ -20,11 +20,36 @@ from data import fetch_ticker
 
 def main() -> None:
     """Fetch data for every configured ticker, render the chart, and open it."""
-    tickers = [fetch_ticker(**t) for t in TICKERS]
-    path = generate_chart(tickers, output_path=OUTPUT_FILE)
+    print("=" * 60)
+    print("  FinAnalysis — Technical Analysis Dashboard")
+    print("=" * 60)
+    print()
 
-    print(f"Combined chart saved: {path}")
+    tickers = []
+    for t in TICKERS:
+        print(f"[{t['label']}] Downloading data for {t['symbol']}...")
+        td = fetch_ticker(**t)
+        tickers.append(td)
+
+        bs = td.buy_score
+        rsi_val = float(td.rsi.iloc[-1])
+        print(f"  Price:  {td.current_price:>12,.2f}")
+        for w, ma in td.moving_averages.items():
+            pct = td.ma_pct_diffs[w]
+            above_below = "above" if pct > 0 else "below"
+            print(f"  MA{w}:  {ma:>12,.2f}  ({abs(pct):.2f}% {above_below})")
+        print(f"  RSI:    {rsi_val:>12.1f}")
+        print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score}/6, RSI: {bs.rsi_score:.1f}/4)")
+        print(f"  → {bs.suggestion}")
+        print()
+
+    print("Generating interactive chart...")
+    path = generate_chart(tickers, output_path=OUTPUT_FILE)
+    print(f"Chart saved: {path}")
+    print()
+
     _open_file(path)
+    print("Done.")
 
 
 def _open_file(path: str) -> None:
