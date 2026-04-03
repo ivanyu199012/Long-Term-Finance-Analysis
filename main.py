@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 from chart import generate_chart
-from config import OUTPUT_FILE, TICKERS
+from config import DRAWDOWN_FULL_PCT, DRAWDOWN_MAX_SCORE, MA_WEIGHTS, OUTPUT_FILE, RSI_MAX_SCORE, TICKERS
 from data import fetch_ticker
 
 
@@ -23,6 +23,8 @@ def main() -> None:
     print("=" * 60)
     print("  FinAnalysis — Technical Analysis Dashboard")
     print("=" * 60)
+    ma_max = sum(MA_WEIGHTS.values())
+    print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {DRAWDOWN_FULL_PCT:.0%})")
     print()
 
     tickers = []
@@ -39,7 +41,8 @@ def main() -> None:
             above_below = "above" if pct > 0 else "below"
             print(f"  MA{w}:  {ma:>12,.2f}  ({abs(pct):.2f}% {above_below})")
         print(f"  RSI:    {rsi_val:>12.1f}")
-        print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score}/6, RSI: {bs.rsi_score:.1f}/4)")
+        print(f"  DD:     {min(bs.current_drawdown, 0):>11.1%}  (max: {bs.max_drawdown:.1%})")
+        print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score:.1f}/{ma_max:.1f}, RSI: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}, DD: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f})")
         print(f"  → {bs.suggestion}")
         print()
 

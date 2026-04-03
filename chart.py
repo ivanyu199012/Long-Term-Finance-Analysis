@@ -13,7 +13,7 @@ from typing import Sequence
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from config import MA_STYLES, OUTPUT_FILE
+from config import MA_STYLES, MA_WEIGHTS, DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE
 from data import TickerData
 
 
@@ -87,10 +87,12 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
         # Per-MA score breakdown lines
         ma_detail = "".join(
             f"MA{w}: {v:,.2f} ({td.ma_pct_diffs[w]:+.2f}%) "
-            f"→ +{bs.ma_breakdown[w]}<br>"
+            f"→ +{bs.ma_breakdown[w]:.1f}/{MA_WEIGHTS[w]:.1f}<br>"
             for w, v in td.moving_averages.items()
         )
 
+        ma_max = sum(MA_WEIGHTS.values())
+        dd_display = min(td.buy_score.current_drawdown, 0)
         cards.append(
             f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
             f"padding:18px 24px;margin:0 8px;min-width:300px;"
@@ -107,10 +109,12 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
             f"<div style='font-size:12px;line-height:1.7;"
             f"border-left:1px solid rgba(255,255,255,0.3);padding-left:20px'>"
             f"Price: {td.current_price:,.2f}<br>"
-            f"<b>MA score: {bs.ma_score}/6</b><br>"
+            f"<b>MA score: {bs.ma_score:.1f}/{ma_max:.1f}</b><br>"
             f"{ma_detail}"
-            f"<b>RSI score: {bs.rsi_score:.1f}/4</b> "
-            f"(RSI: {latest_rsi:.1f})"
+            f"<b>RSI score: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}</b> "
+            f"(RSI: {latest_rsi:.1f})<br>"
+            f"<b>DD score: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f}</b> "
+            f"(DD: {dd_display:.1%}, max: {bs.max_drawdown:.1%})"
             f"</div>"
             f"</div>"
         )

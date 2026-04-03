@@ -24,8 +24,20 @@ TICKERS: list[dict] = [
 MA_WINDOWS: list[int] = [50, 100, 200]
 """Moving-average window sizes applied to every ticker."""
 
+MA_WEIGHTS: dict[int, float] = {50: 0.5, 100: 1.5, 200: 5}
+"""Score contribution when price is below each MA. Total MA max = 7."""
+
 RSI_PERIOD: int = 14
 """Look-back period for the RSI calculation."""
+
+RSI_MAX_SCORE: float = 2
+"""Maximum score the RSI component can contribute."""
+
+DRAWDOWN_MAX_SCORE: float = 3
+"""Maximum score the drawdown component can contribute."""
+
+DRAWDOWN_FULL_PCT: float = 0.30
+"""Drawdown percentage at which the full score is awarded (linear 0–30%)."""
 
 TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""
