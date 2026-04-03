@@ -42,7 +42,7 @@ DRAWDOWN_FULL_PCT: float = 0.30
 TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""
 
-DOWNLOAD_PERIOD: str = "1y"
+DOWNLOAD_PERIOD: str = "3y"
 """yfinance download period string (e.g. '1y', '6mo', '2y')."""
 
 # ── Chart appearance ────────────────────────────────────────────────
