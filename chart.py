@@ -40,12 +40,13 @@ def generate_chart(
     for td in tickers:
         subplot_titles.append(f"{td.label} — {len(td.tail)} Day View")
         subplot_titles.append(f"{td.label} RSI")
+        subplot_titles.append(f"{td.label} Score")
 
     fig = make_subplots(
-        rows=2,
+        rows=3,
         cols=n_cols,
         shared_xaxes=True,
-        row_heights=[0.75, 0.25],
+        row_heights=[0.55, 0.20, 0.25],
         vertical_spacing=0.06,
         subplot_titles=subplot_titles,
     )
@@ -53,9 +54,10 @@ def generate_chart(
     for col, td in enumerate(tickers, start=1):
         _add_price_traces(fig, td, row=1, col=col)
         _add_rsi_traces(fig, td, row=2, col=col)
+        _add_score_traces(fig, td, row=3, col=col)
 
     fig.update_layout(
-        height=700,
+        height=900,
         autosize=True,
         template="plotly_white",
         hovermode="x unified",
@@ -263,6 +265,69 @@ def _add_rsi_traces(
     )
 
     fig.update_yaxes(title_text="RSI", range=[0, 100], row=row, col=col)
+
+
+def _add_score_traces(
+    fig: go.Figure, td: TickerData, row: int, col: int,
+) -> None:
+    """Add historical buy-in score line with suggestion threshold bands."""
+    score = td.score_tail
+    show_legend = col == 1
+
+    fig.add_trace(
+        go.Scatter(
+            x=score.index,
+            y=score,
+            mode="lines",
+            name="Score",
+            line=dict(color="darkorange", width=1.5),
+            legendgroup="score",
+            showlegend=show_legend,
+        ),
+        row=row,
+        col=col,
+    )
+
+    # Suggestion threshold lines
+    for level, label in [
+        (8.5, "Aggressive"),
+        (6.5, "Increase"),
+        (4.5, "Regular"),
+        (2.5, "Reduce"),
+    ]:
+        fig.add_hline(
+            y=level,
+            line_color="gray",
+            line_dash="dot",
+            line_width=0.6,
+            annotation_text=label,
+            annotation_font_size=7,
+            annotation_position="top left",
+            row=row,
+            col=col,
+        )
+
+    # Latest score marker
+    last_date = score.index[-1]
+    last_score = float(score.iloc[-1])
+    fig.add_trace(
+        go.Scatter(
+            x=[last_date],
+            y=[last_score],
+            mode="markers+text",
+            name=f"Score: {last_score:.1f}",
+            marker=dict(color="darkorange", size=8, symbol="diamond"),
+            text=[f"{last_score:.1f}"],
+            textposition="top right",
+            textfont=dict(size=10, color="darkorange"),
+            legendgroup=f"score_latest_{col}",
+            showlegend=show_legend,
+        ),
+        row=row,
+        col=col,
+    )
+
+    fig.update_yaxes(title_text="Score", range=[0, 10], row=row, col=col)
 
 
 def _score_color(score: float) -> str:

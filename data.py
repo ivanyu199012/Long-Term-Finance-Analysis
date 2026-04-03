@@ -58,6 +58,7 @@ class TickerData:
     rsi: pd.Series
     tail: pd.DataFrame
     rsi_tail: pd.Series
+    score_tail: pd.Series = None  # type: ignore[assignment]
     buy_score: BuyScore = None  # type: ignore[assignment]
 
 
@@ -93,6 +94,7 @@ def fetch_ticker(symbol: str, label: str) -> TickerData:
     rsi = _calc_rsi(df["Close"])
     current_dd, max_dd = _calc_drawdown(df["Close"])
     buy_score = _compute_buy_score(current_price, moving_averages, rsi, current_dd, max_dd)
+    score_series = _compute_score_series(df["Close"], rsi)
 
     return TickerData(
         symbol=symbol,
@@ -104,6 +106,7 @@ def fetch_ticker(symbol: str, label: str) -> TickerData:
         rsi=rsi,
         tail=df.tail(TAIL_DAYS),
         rsi_tail=rsi.tail(TAIL_DAYS),
+        score_tail=score_series.tail(TAIL_DAYS),
         buy_score=buy_score,
     )
 
@@ -167,17 +170,26 @@ def _compute_buy_score(
     )
 
 
-def _score_to_suggestion(score: float) -> str:
-    """Map a numeric score to a human-readable suggestion."""
+def _score_to_suggestion(score: float, base_amount: float = 500_000.0) -> str:
+    """Map a numeric score to a suggestion with concrete buy-in amount."""
     if score >= 8.5:
-        return "Aggressive buy-in"
-    if score >= 6.5:
-        return "Increase buy-in"
-    if score >= 4.5:
-        return "Regular buy-in"
-    if score >= 2.5:
-        return "Reduce buy-in"
-    return "Minimum buy-in"
+        multiplier = 2.25  # midpoint of 2.0–2.5
+        label = "Aggressive buy-in"
+    elif score >= 6.5:
+        multiplier = 1.5
+        label = "Increase buy-in"
+    elif score >= 4.5:
+        multiplier = 1.0
+        label = "Regular buy-in"
+    elif score >= 2.5:
+        multiplier = 0.5
+        label = "Reduce buy-in"
+    else:
+        multiplier = 0.25
+        label = "Minimum buy-in"
+
+    amount = base_amount * multiplier
+    return f"{label}<br> ({multiplier:.2f}x → ₩{amount:.2f})"
 
 
 def _download(symbol: str) -> pd.DataFrame:
@@ -206,6 +218,34 @@ def _calc_drawdown(close: pd.Series) -> tuple[float, float]:
     current_dd = float(drawdown.iloc[-1])
     max_dd = float(drawdown.min())
     return current_dd, max_dd
+
+
+def _compute_score_series(close: pd.Series, rsi: pd.Series) -> pd.Series:
+    """Compute the buy-in score for every day in the series.
+
+    Replicates the same MA + RSI + drawdown logic used in
+    ``_compute_buy_score`` but vectorised across all rows.
+    """
+    # MAs
+    mas = {w: close.rolling(window=w).mean() for w in MA_WINDOWS}
+
+    # MA component: full weight when price < MA
+    ma_score = pd.Series(0.0, index=close.index)
+    for w, ma in mas.items():
+        ma_score = ma_score + (close < ma).astype(float) * MA_WEIGHTS[w]
+
+    # RSI component: step-based
+    rsi_score = pd.Series(0.0, index=close.index)
+    rsi_score = rsi_score.where(rsi > 40, RSI_MAX_SCORE * 0.5)
+    rsi_score = rsi_score.where(rsi > 30, RSI_MAX_SCORE)
+
+    # Drawdown component: linear 0–DRAWDOWN_FULL_PCT
+    peak = close.cummax()
+    dd = ((close - peak) / peak).abs()
+    dd_score = (dd / DRAWDOWN_FULL_PCT).clip(upper=1.0) * DRAWDOWN_MAX_SCORE
+
+    total = (ma_score + rsi_score + dd_score).clip(0.0, 10.0)
+    return total
 
 
 def _calc_rsi(series: pd.Series, period: int = RSI_PERIOD) -> pd.Series:
