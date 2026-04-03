@@ -12,10 +12,12 @@ TICKERS: list[dict] = [
     {
         "symbol": "^GSPC",
         "label": "S&P 500",
+        "ma_weights": {50: 0.5, 100: 1.5, 200: 5},
     },
     {
         "symbol": "GC=F",
         "label": "Gold",
+        "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
     },
 ]
 
@@ -23,9 +25,6 @@ TICKERS: list[dict] = [
 
 MA_WINDOWS: list[int] = [50, 100, 200]
 """Moving-average window sizes applied to every ticker."""
-
-MA_WEIGHTS: dict[int, float] = {50: 0.5, 100: 1.5, 200: 5}
-"""Score contribution when price is below each MA. Total MA max = 7."""
 
 RSI_PERIOD: int = 14
 """Look-back period for the RSI calculation."""

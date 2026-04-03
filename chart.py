@@ -13,7 +13,7 @@ from typing import Sequence
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from config import MA_STYLES, MA_WEIGHTS, DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE
+from config import MA_STYLES, DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE
 from data import TickerData
 
 
@@ -89,11 +89,11 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
         # Per-MA score breakdown lines
         ma_detail = "".join(
             f"MA{w}: {v:,.2f} ({td.ma_pct_diffs[w]:+.2f}%) "
-            f"→ +{bs.ma_breakdown[w]:.1f}/{MA_WEIGHTS[w]:.1f}<br>"
+            f"→ +{bs.ma_breakdown[w]:.1f}/{td.ma_weights[w]:.1f}<br>"
             for w, v in td.moving_averages.items()
         )
 
-        ma_max = sum(MA_WEIGHTS.values())
+        ma_max = sum(td.ma_weights.values())
         dd_display = min(td.buy_score.current_drawdown, 0)
         cards.append(
             f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"

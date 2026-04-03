@@ -15,7 +15,6 @@ from config import (
     DOWNLOAD_PERIOD,
     DRAWDOWN_FULL_PCT,
     DRAWDOWN_MAX_SCORE,
-    MA_WEIGHTS,
     MA_WINDOWS,
     RSI_MAX_SCORE,
     RSI_PERIOD,
@@ -51,6 +50,7 @@ class TickerData:
 
     symbol: str
     label: str
+    ma_weights: dict[int, float]
     history: pd.DataFrame
     current_price: float
     moving_averages: dict[int, float]
@@ -65,7 +65,7 @@ class TickerData:
 # ── Public helpers ──────────────────────────────────────────────────
 
 
-def fetch_ticker(symbol: str, label: str) -> TickerData:
+def fetch_ticker(symbol: str, label: str, ma_weights: dict[int, float]) -> TickerData:
     """Download one year of daily data and compute indicators.
 
     Parameters
@@ -93,12 +93,13 @@ def fetch_ticker(symbol: str, label: str) -> TickerData:
 
     rsi = _calc_rsi(df["Close"])
     current_dd, max_dd = _calc_drawdown(df["Close"])
-    buy_score = _compute_buy_score(current_price, moving_averages, rsi, current_dd, max_dd)
-    score_series = _compute_score_series(df["Close"], rsi)
+    buy_score = _compute_buy_score(current_price, moving_averages, rsi, current_dd, max_dd, ma_weights)
+    score_series = _compute_score_series(df["Close"], rsi, ma_weights)
 
     return TickerData(
         symbol=symbol,
         label=label,
+        ma_weights=ma_weights,
         history=df,
         current_price=current_price,
         moving_averages=moving_averages,
@@ -120,6 +121,7 @@ def _compute_buy_score(
     rsi: pd.Series,
     current_drawdown: float,
     max_drawdown: float,
+    ma_weights: dict[int, float],
 ) -> BuyScore:
     """Derive a 0–10 buy-in score from MA positioning, RSI, and drawdown.
 
@@ -138,7 +140,7 @@ def _compute_buy_score(
     # ── MA component (0–7) ──
     ma_breakdown: dict[int, float] = {}
     for window, ma in moving_averages.items():
-        ma_breakdown[window] = MA_WEIGHTS[window] if current_price < ma else 0.0
+        ma_breakdown[window] = ma_weights[window] if current_price < ma else 0.0
     ma_score = sum(ma_breakdown.values())
 
     # ── RSI component (0–2) ──
@@ -220,7 +222,7 @@ def _calc_drawdown(close: pd.Series) -> tuple[float, float]:
     return current_dd, max_dd
 
 
-def _compute_score_series(close: pd.Series, rsi: pd.Series) -> pd.Series:
+def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int, float]) -> pd.Series:
     """Compute the buy-in score for every day in the series.
 
     Replicates the same MA + RSI + drawdown logic used in
@@ -232,7 +234,7 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series) -> pd.Series:
     # MA component: full weight when price < MA
     ma_score = pd.Series(0.0, index=close.index)
     for w, ma in mas.items():
-        ma_score = ma_score + (close < ma).astype(float) * MA_WEIGHTS[w]
+        ma_score = ma_score + (close < ma).astype(float) * ma_weights[w]
 
     # RSI component: step-based
     rsi_score = pd.Series(0.0, index=close.index)
