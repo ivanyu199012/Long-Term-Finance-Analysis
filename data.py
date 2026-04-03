@@ -142,10 +142,10 @@ def _compute_buy_score(
     latest_rsi = float(rsi.iloc[-1])
     if latest_rsi <= 30:
         rsi_score = RSI_MAX_SCORE
-    elif latest_rsi >= 70:
-        rsi_score = 0.0
+    elif latest_rsi <= 40:
+        rsi_score = RSI_MAX_SCORE * 0.5
     else:
-        rsi_score = (70 - latest_rsi) / (70 - 30) * RSI_MAX_SCORE
+        rsi_score = 0.0
 
     # ── Drawdown component (0–2) ──
     dd_abs = abs(current_drawdown)

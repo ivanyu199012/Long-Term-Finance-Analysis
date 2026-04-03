@@ -30,10 +30,10 @@ MA_WEIGHTS: dict[int, float] = {50: 0.5, 100: 1.5, 200: 5}
 RSI_PERIOD: int = 14
 """Look-back period for the RSI calculation."""
 
-RSI_MAX_SCORE: float = 2
+RSI_MAX_SCORE: float = 1.5
 """Maximum score the RSI component can contribute."""
 
-DRAWDOWN_MAX_SCORE: float = 3
+DRAWDOWN_MAX_SCORE: float = 1.5
 """Maximum score the drawdown component can contribute."""
 
 DRAWDOWN_FULL_PCT: float = 0.30
