@@ -1,8 +1,9 @@
 """Chart rendering for FinAnalysis.
 
 Builds an interactive Plotly figure with price + moving-average panels
-on top and RSI panels on the bottom, one column per ticker.  The result
-is saved as a self-contained HTML file.
+on top and RSI panels on the bottom, one column per ticker.  A summary
+header with buy-in scores is rendered as HTML above the chart.  The
+result is saved as a self-contained HTML file.
 """
 
 from __future__ import annotations
@@ -62,11 +63,84 @@ def generate_chart(
         margin=dict(t=40, b=30),
     )
 
-    fig.write_html(output_path, include_plotlyjs=True)
+    # Build the full HTML: score header + plotly chart
+    header_html = _build_score_header(tickers)
+    chart_html = fig.to_html(include_plotlyjs=True, full_html=False)
+
+    with open(output_path, "w", encoding="utf-8") as fh:
+        fh.write(_wrap_html(header_html, chart_html))
+
     return output_path
 
 
-# ── Private helpers ─────────────────────────────────────────────────
+# ── HTML builders ───────────────────────────────────────────────────
+
+
+def _build_score_header(tickers: Sequence[TickerData]) -> str:
+    """Build an HTML summary bar with one card per ticker."""
+    cards = []
+    for td in tickers:
+        bs = td.buy_score
+        bg = _score_color(bs.score)
+        latest_rsi = float(td.rsi.iloc[-1])
+
+        # Per-MA score breakdown lines
+        ma_detail = "".join(
+            f"MA{w}: {v:,.2f} ({td.ma_pct_diffs[w]:+.2f}%) "
+            f"→ +{bs.ma_breakdown[w]}<br>"
+            for w, v in td.moving_averages.items()
+        )
+
+        cards.append(
+            f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
+            f"padding:18px 24px;margin:0 8px;min-width:300px;"
+            f"display:grid;grid-template-columns:auto 1fr;gap:0 24px;"
+            f"align-items:center'>"
+            # Left column: name, score, suggestion
+            f"<div style='text-align:center'>"
+            f"<div style='font-size:20px;font-weight:700'>{td.label}</div>"
+            f"<div style='font-size:42px;font-weight:800;line-height:1.1'>"
+            f"{bs.score:.1f}<span style='font-size:18px'>/10</span></div>"
+            f"<div style='font-size:14px'>{bs.suggestion}</div>"
+            f"</div>"
+            # Right column: breakdown figures
+            f"<div style='font-size:12px;line-height:1.7;"
+            f"border-left:1px solid rgba(255,255,255,0.3);padding-left:20px'>"
+            f"Price: {td.current_price:,.2f}<br>"
+            f"<b>MA score: {bs.ma_score}/6</b><br>"
+            f"{ma_detail}"
+            f"<b>RSI score: {bs.rsi_score:.1f}/4</b> "
+            f"(RSI: {latest_rsi:.1f})"
+            f"</div>"
+            f"</div>"
+        )
+
+    disclaimer = (
+        "<div style='text-align:center;font-size:11px;color:#888;"
+        "margin-top:8px'>⚠ Technical indicator score only — "
+        "not financial advice</div>"
+    )
+    return (
+        f"<div style='display:flex;justify-content:center;"
+        f"flex-wrap:wrap;margin:16px 8px 8px'>"
+        f"{''.join(cards)}</div>{disclaimer}"
+    )
+
+
+def _wrap_html(header: str, chart_div: str) -> str:
+    """Wrap the header and chart div in a minimal HTML page."""
+    return (
+        "<!DOCTYPE html><html><head><meta charset='utf-8'>"
+        "<meta name='viewport' content='width=device-width,initial-scale=1'>"
+        "<title>FinAnalysis</title>"
+        "<style>body{margin:0;font-family:system-ui,sans-serif;"
+        "background:#fafafa}</style></head><body>"
+        f"{header}{chart_div}"
+        "</body></html>"
+    )
+
+
+# ── Chart trace helpers ─────────────────────────────────────────────
 
 
 def _add_price_traces(
@@ -148,7 +222,6 @@ def _add_rsi_traces(
         col=col,
     )
 
-    # Overbought / oversold reference lines
     for level, color, label in [
         (70, "red", "Overbought (70)"),
         (30, "green", "Oversold (30)"),
@@ -186,3 +259,19 @@ def _add_rsi_traces(
     )
 
     fig.update_yaxes(title_text="RSI", range=[0, 100], row=row, col=col)
+
+
+def _score_color(score: float) -> str:
+    """Return a background colour for the score badge.
+
+    Green tones for high scores (buy), red tones for low (hold off).
+    """
+    if score >= 8:
+        return "#1b7a2b"
+    if score >= 6:
+        return "#4caf50"
+    if score >= 4:
+        return "#ff9800"
+    if score >= 2:
+        return "#f44336"
+    return "#b71c1c"
