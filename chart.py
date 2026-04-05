@@ -36,11 +36,11 @@ def generate_chart(
         The path the file was written to.
     """
     n_cols = len(tickers)
-    subplot_titles = []
-    for td in tickers:
-        subplot_titles.append(f"{td.label} — {len(td.tail)} Day View")
-        subplot_titles.append(f"{td.label} RSI")
-        subplot_titles.append(f"{td.label} Score")
+    # Plotly expects subplot titles in row-major order (row by row, left to right)
+    row1_titles = [f"{td.label} — {len(td.tail)} Day View" for td in tickers]
+    row2_titles = [f"{td.label} RSI" for td in tickers]
+    row3_titles = [f"{td.label} Score" for td in tickers]
+    subplot_titles = row1_titles + row2_titles + row3_titles
 
     fig = make_subplots(
         rows=3,
