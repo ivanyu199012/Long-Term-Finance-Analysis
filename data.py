@@ -58,6 +58,7 @@ class TickerData:
     rsi: pd.Series
     tail: pd.DataFrame
     rsi_tail: pd.Series
+    estimated_dates: list[str] = None  # type: ignore[assignment]
     score_tail: pd.Series = None  # type: ignore[assignment]
     buy_score: BuyScore = None  # type: ignore[assignment]
 
@@ -82,7 +83,23 @@ def fetch_ticker(symbol: str, label: str, ma_weights: dict[int, float]) -> Ticke
         the most recent *TAIL_DAYS* slice for charting.
     """
     df = _download(symbol)
-    current_price = float(df["Close"].iloc[-1])
+    current_price = _get_live_price(symbol, df)
+
+    # Fill incomplete rows (e.g. today before market close) with
+    # mean(previous close, live price) for a more realistic estimate.
+    estimated_dates: list[str] = []
+    nan_mask = df["Close"].isna()
+    if nan_mask.any():
+        for idx in df.index[nan_mask]:
+            pos = df.index.get_loc(idx)
+            prev_close = float(df["Close"].iloc[pos - 1]) if pos > 0 else current_price
+            est_price = (prev_close + current_price) / 2
+            df.at[idx, "Close"] = est_price
+            for col in ("Open", "High", "Low"):
+                if col in df.columns:
+                    df.at[idx, col] = est_price
+            date_str = idx.strftime("%Y-%m-%d") if hasattr(idx, "strftime") else str(idx)
+            estimated_dates.append(date_str)
 
     moving_averages: dict[int, float] = {}
     ma_pct_diffs: dict[int, float] = {}
@@ -108,6 +125,7 @@ def fetch_ticker(symbol: str, label: str, ma_weights: dict[int, float]) -> Ticke
         tail=df.tail(TAIL_DAYS),
         rsi_tail=rsi.tail(TAIL_DAYS),
         score_tail=score_series.tail(TAIL_DAYS),
+        estimated_dates=estimated_dates,
         buy_score=buy_score,
     )
 
@@ -204,6 +222,22 @@ def _download(symbol: str) -> pd.DataFrame:
     df = yf.download(symbol, period=DOWNLOAD_PERIOD, auto_adjust=True)
     df.columns = df.columns.get_level_values(0)
     return df
+
+
+def _get_live_price(symbol: str, df: pd.DataFrame) -> float:
+    """Return the real-time market price, falling back to last close.
+
+    Uses ``yf.Ticker.fast_info.last_price`` for the live quote.
+    If that fails, falls back to the last close from the downloaded
+    history.
+    """
+    try:
+        price = yf.Ticker(symbol).fast_info.last_price
+        if price:
+            return float(price)
+    except Exception:
+        pass
+    return float(df["Close"].dropna().iloc[-1])
 
 
 def _calc_drawdown(close: pd.Series) -> tuple[float, float]:

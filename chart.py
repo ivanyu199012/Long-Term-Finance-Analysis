@@ -126,10 +126,26 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
         "margin-top:8px'>⚠ Technical indicator score only — "
         "not financial advice</div>"
     )
+
+    # Estimated-data warning
+    est_lines = []
+    for td in tickers:
+        if td.estimated_dates:
+            dates = ", ".join(td.estimated_dates)
+            est_lines.append(f"{td.label}: {dates}")
+    est_warning = ""
+    if est_lines:
+        est_detail = " | ".join(est_lines)
+        est_warning = (
+            "<div style='text-align:center;font-size:11px;color:#c62828;"
+            "margin-top:4px'>⚠ Estimated data (mean of prev close &amp; live price): "
+            f"{est_detail}</div>"
+        )
+
     return (
         f"<div style='display:flex;justify-content:center;"
         f"flex-wrap:wrap;margin:16px 8px 8px'>"
-        f"{''.join(cards)}</div>{disclaimer}"
+        f"{''.join(cards)}</div>{disclaimer}{est_warning}"
     )
 
 

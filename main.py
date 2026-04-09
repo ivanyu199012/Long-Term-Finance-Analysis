@@ -44,6 +44,8 @@ def main() -> None:
         print(f"  DD:     {min(bs.current_drawdown, 0):>11.1%}  (max: {bs.max_drawdown:.1%})")
         print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score:.1f}/{ma_max:.1f}, RSI: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}, DD: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f})")
         print(f"  → {bs.suggestion}")
+        if td.estimated_dates:
+            print(f"  \033[33m⚠ Estimated data for: {', '.join(td.estimated_dates)} (mean of prev close & live price)\033[0m")
         print()
 
     print("Generating interactive chart...")
