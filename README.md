@@ -45,15 +45,22 @@ MA weights are configured per ticker:
 
 ### Suggestion thresholds
 
-| Score   | Suggestion        |
-|---------|-------------------|
-| ≥ 8.5   | Aggressive buy-in |
-| ≥ 6.5   | Increase buy-in   |
-| ≥ 4.5   | Regular buy-in    |
-| ≥ 2.5   | Reduce buy-in     |
-| < 2.5   | Minimum buy-in    |
+| Score   | Suggestion        | Multiplier | Amount (₩)  |
+|---------|-------------------|------------|-------------|
+| ≥ 8.5   | Aggressive buy-in | 2.25x      | 1,125,000   |
+| ≥ 6.5   | Increase buy-in   | 1.50x      | 750,000     |
+| ≥ 4.5   | Regular buy-in    | 1.00x      | 500,000     |
+| ≥ 2.5   | Reduce buy-in     | 0.50x      | 250,000     |
+| < 2.5   | Minimum buy-in    | 0.25x      | 125,000     |
 
 > ⚠ This is a technical indicator score only — not financial advice.
+
+## Estimated data handling
+
+When yfinance returns incomplete rows (e.g. today's data before market close), the missing `Close`/`Open`/`High`/`Low` values are filled with the mean of the previous day's close and the current live price. This keeps MA and drawdown calculations valid without dropping the row entirely.
+
+- **Terminal**: a yellow warning line is printed at the end of the ticker section listing which dates were estimated.
+- **Dashboard**: a red warning line appears below the disclaimer listing all estimated dates per ticker.
 
 ## Prerequisites
 
