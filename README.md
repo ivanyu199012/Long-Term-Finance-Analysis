@@ -26,6 +26,14 @@ MA weights are configured per ticker:
 | MA100     | 1.5     | Full weight if price is below MA100 |
 | MA50      | 0.5     | Full weight if price is below MA50  |
 
+**NASDAQ 100** (MA total: 7.0)
+
+| Component | Max pts | Logic |
+|-----------|---------|-------|
+| MA200     | 5.0     | Full weight if price is below MA200 |
+| MA100     | 1.5     | Full weight if price is below MA100 |
+| MA50      | 0.5     | Full weight if price is below MA50  |
+
 **Gold** (MA total: 7.0)
 
 | Component | Max pts | Logic |
