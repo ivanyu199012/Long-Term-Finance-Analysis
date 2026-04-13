@@ -45,9 +45,9 @@ def generate_chart(
     fig = make_subplots(
         rows=3,
         cols=n_cols,
-        shared_xaxes=True,
+        shared_xaxes=False,
         row_heights=[0.55, 0.20, 0.25],
-        vertical_spacing=0.06,
+        vertical_spacing=0.08,
         subplot_titles=subplot_titles,
     )
 
@@ -62,7 +62,7 @@ def generate_chart(
         template="plotly_white",
         hovermode="x unified",
         legend=dict(font=dict(size=9)),
-        margin=dict(t=40, b=30),
+        margin=dict(t=40, b=50, r=120),
     )
 
     # Build the full HTML: score header + plotly chart
@@ -211,7 +211,7 @@ def _add_price_traces(
             name=f"Latest: {td.current_price:,.2f}",
             marker=dict(color="crimson", size=9, symbol="diamond"),
             text=[f"{td.current_price:,.2f}"],
-            textposition="top right",
+            textposition="top left",
             textfont=dict(size=10, color="crimson"),
             legendgroup=f"latest_{col}",
             showlegend=show_legend,
@@ -271,7 +271,7 @@ def _add_rsi_traces(
             name=f"RSI: {last_rsi:.1f}",
             marker=dict(color="purple", size=8, symbol="diamond"),
             text=[f"{last_rsi:.1f}"],
-            textposition="top right",
+            textposition="top left",
             textfont=dict(size=10, color="purple"),
             legendgroup=f"rsi_latest_{col}",
             showlegend=show_legend,
@@ -334,7 +334,7 @@ def _add_score_traces(
             name=f"Score: {last_score:.1f}",
             marker=dict(color="darkorange", size=8, symbol="diamond"),
             text=[f"{last_score:.1f}"],
-            textposition="top right",
+            textposition="top left",
             textfont=dict(size=10, color="darkorange"),
             legendgroup=f"score_latest_{col}",
             showlegend=show_legend,
