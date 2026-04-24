@@ -160,6 +160,7 @@ def fetch_ticker(
     ma_weights: dict[int, float],
     ma_fade_thresholds: dict[int, float],
     drawdown_full_pct: float,
+    **kwargs: object,
 ) -> TickerData:
     """Download daily data and compute indicators.
 
