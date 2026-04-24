@@ -121,3 +121,4 @@ HEIGHT_RATIOS: list[int] = [3, 1]
 # ── Output ──────────────────────────────────────────────────────────
 
 OUTPUT_FILE: str = "out/combined_chart.html"
+BACKTEST_OUTPUT_FILE: str = "out/backtest_chart.html"

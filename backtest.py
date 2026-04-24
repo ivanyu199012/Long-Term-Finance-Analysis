@@ -26,6 +26,8 @@ class BacktestResult:
     total_return_pct: float
     max_drawdown_pct: float
     n_months: int
+    equity_curve: pd.Series | None = None
+    monthly_investments: pd.Series | None = None
 
 
 @dataclass
@@ -135,6 +137,7 @@ def _run_strategy(
     total_units = 0.0
     total_invested = 0.0
     portfolio_values: list[float] = []
+    invested_amounts: list[float] = []
 
     for date in monthly_close.index:
         price = float(monthly_close.loc[date])
@@ -146,6 +149,7 @@ def _run_strategy(
         total_invested += amount
 
         portfolio_values.append(total_units * price)
+        invested_amounts.append(amount)
 
     final_value = portfolio_values[-1] if portfolio_values else 0.0
     total_return_pct = ((final_value - total_invested) / total_invested * 100) if total_invested > 0 else 0.0
@@ -162,6 +166,8 @@ def _run_strategy(
         total_return_pct=total_return_pct,
         max_drawdown_pct=max_drawdown_pct,
         n_months=len(monthly_close),
+        equity_curve=pv,
+        monthly_investments=pd.Series(invested_amounts, index=monthly_close.index),
     )
 
 
@@ -205,6 +211,7 @@ class PortfolioBacktestResult:
     max_drawdown_pct: float
     n_months: int
     per_asset: dict[str, BacktestResult]
+    equity_curve: pd.Series | None = None
 
 
 @dataclass
@@ -360,6 +367,7 @@ def run_portfolio_backtest(
             max_drawdown_pct=max_dd,
             n_months=n_months,
             per_asset={},
+            equity_curve=pv_s,
         )
 
     flat_result = _make_result(flat_pv_list, flat_invested)

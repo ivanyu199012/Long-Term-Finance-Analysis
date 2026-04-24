@@ -14,7 +14,7 @@ from typing import Sequence
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from config import MA_STYLES, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
+from config import MA_STYLES, BACKTEST_OUTPUT_FILE, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
 from data import Allocation, TickerData
 
 
@@ -395,3 +395,278 @@ def _score_color(score: float) -> str:
     if score >= 2:
         return "#f44336"
     return "#b71c1c"
+
+
+# ── Backtest chart ──────────────────────────────────────────────────
+
+
+def generate_backtest_chart(
+    comparisons: Sequence["BacktestComparison"],
+    portfolio_comparisons: Sequence["PortfolioComparison"] | None = None,
+    output_path: str = BACKTEST_OUTPUT_FILE,
+) -> str:
+    """Render an interactive backtest dashboard and save it to *output_path*.
+
+    Parameters
+    ----------
+    comparisons:
+        Per-ticker backtest results (multiple periods per ticker).
+    portfolio_comparisons:
+        Portfolio-level backtest results (one per period).
+    output_path:
+        File path for the saved HTML file.
+
+    Returns
+    -------
+    str
+        The path the file was written to.
+    """
+    from backtest import BacktestComparison, PortfolioComparison
+
+    # Group comparisons by ticker label
+    by_ticker: dict[str, list[BacktestComparison]] = {}
+    for c in comparisons:
+        by_ticker.setdefault(c.label, []).append(c)
+
+    ticker_labels = list(by_ticker.keys())
+    n_tickers = len(ticker_labels)
+
+    # Layout: one row of equity curves per ticker, then portfolio row,
+    # then one row of monthly investment bars per ticker
+    has_portfolio = bool(portfolio_comparisons)
+    n_equity_rows = n_tickers + (1 if has_portfolio else 0)
+    n_invest_rows = n_tickers
+    total_rows = n_equity_rows + n_invest_rows
+
+    # 2 columns: one per period (5y, 10y)
+    n_cols = 2
+
+    subplot_titles: list[str] = []
+    # Equity rows
+    for label in ticker_labels:
+        for c in sorted(by_ticker[label], key=lambda x: x.period):
+            subplot_titles.append(f"{label} — {c.period} Equity Curve")
+    if has_portfolio:
+        for pc in sorted(portfolio_comparisons, key=lambda x: x.period):
+            subplot_titles.append(f"Portfolio — {pc.period} Equity Curve")
+    # Investment rows
+    for label in ticker_labels:
+        for c in sorted(by_ticker[label], key=lambda x: x.period):
+            subplot_titles.append(f"{label} — {c.period} Monthly Investment")
+
+    row_heights = [0.6 / n_equity_rows] * n_equity_rows + [0.4 / n_invest_rows] * n_invest_rows
+
+    fig = make_subplots(
+        rows=total_rows,
+        cols=n_cols,
+        shared_xaxes=False,
+        row_heights=row_heights,
+        vertical_spacing=0.04,
+        subplot_titles=subplot_titles,
+    )
+
+    # ── Equity curves per ticker ──
+    for row_idx, label in enumerate(ticker_labels, start=1):
+        sorted_comps = sorted(by_ticker[label], key=lambda x: x.period)
+        for col_idx, comp in enumerate(sorted_comps, start=1):
+            show_legend = row_idx == 1 and col_idx == 1
+            _add_equity_traces(fig, comp, row=row_idx, col=col_idx, show_legend=show_legend)
+
+    # ── Portfolio equity curves ──
+    if has_portfolio:
+        port_row = n_tickers + 1
+        sorted_ports = sorted(portfolio_comparisons, key=lambda x: x.period)
+        for col_idx, pc in enumerate(sorted_ports, start=1):
+            _add_portfolio_equity_traces(fig, pc, row=port_row, col=col_idx)
+
+    # ── Monthly investment bars per ticker ──
+    for row_offset, label in enumerate(ticker_labels):
+        invest_row = n_equity_rows + row_offset + 1
+        sorted_comps = sorted(by_ticker[label], key=lambda x: x.period)
+        for col_idx, comp in enumerate(sorted_comps, start=1):
+            show_legend = row_offset == 0 and col_idx == 1
+            _add_investment_traces(fig, comp, row=invest_row, col=col_idx, show_legend=show_legend)
+
+    fig.update_layout(
+        height=350 * total_rows,
+        autosize=True,
+        template="plotly_white",
+        hovermode="x unified",
+        legend=dict(font=dict(size=9)),
+        margin=dict(t=40, b=50, r=60),
+    )
+
+    header_html = _build_backtest_header(comparisons, portfolio_comparisons)
+    chart_html = fig.to_html(include_plotlyjs=True, full_html=False)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+    with open(output_path, "w", encoding="utf-8") as fh:
+        fh.write(_wrap_html(header_html, chart_html))
+
+    return output_path
+
+
+# ── Backtest trace helpers ──────────────────────────────────────────
+
+_FLAT_COLOR = "#1976D2"
+_RAW_COLOR = "#F57C00"
+_NORM_COLOR = "#388E3C"
+_PORT_FLAT_COLOR = "#5C6BC0"
+_PORT_SCORE_COLOR = "#EF5350"
+
+
+def _add_equity_traces(
+    fig: go.Figure,
+    comp: "BacktestComparison",
+    row: int,
+    col: int,
+    show_legend: bool = False,
+) -> None:
+    """Add flat / raw / normalized equity curves for one ticker+period."""
+    for result, name, color in [
+        (comp.flat, "Flat DCA", _FLAT_COLOR),
+        (comp.score_raw, "Score (raw)", _RAW_COLOR),
+        (comp.score_normalized, "Score (norm)", _NORM_COLOR),
+    ]:
+        if result.equity_curve is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=result.equity_curve.index,
+                    y=result.equity_curve.values,
+                    mode="lines",
+                    name=name,
+                    line=dict(color=color, width=1.5),
+                    legendgroup=name,
+                    showlegend=show_legend,
+                ),
+                row=row,
+                col=col,
+            )
+    fig.update_yaxes(title_text="₩", row=row, col=col)
+
+
+def _add_portfolio_equity_traces(
+    fig: go.Figure,
+    pc: "PortfolioComparison",
+    row: int,
+    col: int,
+) -> None:
+    """Add flat vs score-alloc equity curves for the portfolio."""
+    show_legend = col == 1
+    for result, name, color in [
+        (pc.flat, "Flat Alloc", _PORT_FLAT_COLOR),
+        (pc.score_alloc, "Score Alloc", _PORT_SCORE_COLOR),
+    ]:
+        if result.equity_curve is not None:
+            fig.add_trace(
+                go.Scatter(
+                    x=result.equity_curve.index,
+                    y=result.equity_curve.values,
+                    mode="lines",
+                    name=name,
+                    line=dict(color=color, width=1.5),
+                    legendgroup=name,
+                    showlegend=show_legend,
+                ),
+                row=row,
+                col=col,
+            )
+    fig.update_yaxes(title_text="₩", row=row, col=col)
+
+
+def _add_investment_traces(
+    fig: go.Figure,
+    comp: "BacktestComparison",
+    row: int,
+    col: int,
+    show_legend: bool = False,
+) -> None:
+    """Add monthly investment bar chart for flat vs score-raw."""
+    for result, name, color in [
+        (comp.flat, "Flat invest", _FLAT_COLOR),
+        (comp.score_raw, "Score invest", _RAW_COLOR),
+    ]:
+        if result.monthly_investments is not None:
+            fig.add_trace(
+                go.Bar(
+                    x=result.monthly_investments.index,
+                    y=result.monthly_investments.values,
+                    name=name,
+                    marker_color=color,
+                    opacity=0.6,
+                    legendgroup=name + "_inv",
+                    showlegend=show_legend,
+                ),
+                row=row,
+                col=col,
+            )
+    fig.update_yaxes(title_text="₩/mo", row=row, col=col)
+
+
+# ── Backtest header ────────────────────────────────────────────────
+
+
+def _build_backtest_header(
+    comparisons: Sequence["BacktestComparison"],
+    portfolio_comparisons: Sequence["PortfolioComparison"] | None = None,
+) -> str:
+    """Build an HTML summary header for the backtest dashboard."""
+    cards: list[str] = []
+
+    for comp in comparisons:
+        flat = comp.flat
+        norm = comp.score_normalized
+        diff = norm.total_return_pct - flat.total_return_pct
+        bg = "#388E3C" if diff > 0 else "#F44336" if diff < -1 else "#FF9800"
+
+        cards.append(
+            f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
+            f"padding:14px 20px;margin:4px 6px;min-width:260px'>"
+            f"<div style='font-size:16px;font-weight:700'>{comp.label} — {comp.period}</div>"
+            f"<div style='font-size:11px;line-height:1.8;margin-top:6px'>"
+            f"<b>Flat DCA:</b> {flat.total_return_pct:+.2f}% return, "
+            f"{flat.max_drawdown_pct:.1f}% max DD<br>"
+            f"<b>Score (norm):</b> {norm.total_return_pct:+.2f}% return, "
+            f"{norm.max_drawdown_pct:.1f}% max DD<br>"
+            f"<b>Edge:</b> {diff:+.2f}pp"
+            f"</div></div>"
+        )
+
+    if portfolio_comparisons:
+        for pc in portfolio_comparisons:
+            flat_p = pc.flat
+            score_p = pc.score_alloc
+            diff_p = score_p.total_return_pct - flat_p.total_return_pct
+            bg = "#1565C0" if diff_p > 0 else "#C62828"
+
+            cards.append(
+                f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
+                f"padding:14px 20px;margin:4px 6px;min-width:260px'>"
+                f"<div style='font-size:16px;font-weight:700'>Portfolio — {pc.period}</div>"
+                f"<div style='font-size:11px;line-height:1.8;margin-top:6px'>"
+                f"<b>Flat Alloc:</b> {flat_p.total_return_pct:+.2f}% return, "
+                f"{flat_p.max_drawdown_pct:.1f}% max DD<br>"
+                f"<b>Score Alloc:</b> {score_p.total_return_pct:+.2f}% return, "
+                f"{score_p.max_drawdown_pct:.1f}% max DD<br>"
+                f"<b>Edge:</b> {diff_p:+.2f}pp"
+                f"</div></div>"
+            )
+
+    title = (
+        "<div style='text-align:center;font-size:22px;font-weight:700;"
+        "margin:16px 0 8px;color:#333'>"
+        "FinAnalysis — Backtest: Flat DCA vs Score-based DCA</div>"
+    )
+    disclaimer = (
+        "<div style='text-align:center;font-size:11px;color:#888;"
+        "margin-top:6px'>⚠ Past performance does not guarantee future results. "
+        "This is a simulation — not financial advice.</div>"
+    )
+
+    return (
+        f"{title}"
+        f"<div style='display:flex;justify-content:center;"
+        f"flex-wrap:wrap;margin:8px 8px 4px'>"
+        f"{''.join(cards)}</div>{disclaimer}"
+    )

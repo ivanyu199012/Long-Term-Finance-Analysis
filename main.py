@@ -81,11 +81,15 @@ def _run_backtest() -> None:
     import yfinance as yf
 
     from backtest import print_backtest, print_portfolio_backtest, run_backtest, run_portfolio_backtest
+    from chart import generate_backtest_chart
+    from config import BACKTEST_OUTPUT_FILE
 
     print("=" * 60)
     print("  FinAnalysis — Backtest: Flat DCA vs Score-based DCA")
     print("=" * 60)
     print()
+
+    all_comparisons = []
 
     for t in TICKERS:
         symbol = t["symbol"]
@@ -107,9 +111,11 @@ def _run_backtest() -> None:
                 continue
 
             result = run_backtest(close, ma_weights, ma_fade, dd_full, label, period)
+            all_comparisons.append(result)
             print_backtest(result)
 
     # ── Portfolio-level backtest ──
+    all_portfolio = []
     for period in ("5y", "10y"):
         download_period = {"5y": "7y", "10y": "12y"}[period]
         asset_data = []
@@ -133,7 +139,19 @@ def _run_backtest() -> None:
 
         if len(asset_data) == len(TICKERS):
             portfolio_result = run_portfolio_backtest(asset_data, period)
+            all_portfolio.append(portfolio_result)
             print_portfolio_backtest(portfolio_result)
+
+    # ── Generate HTML dashboard ──
+    if all_comparisons:
+        print("Generating backtest dashboard...")
+        path = generate_backtest_chart(
+            all_comparisons,
+            portfolio_comparisons=all_portfolio or None,
+            output_path=BACKTEST_OUTPUT_FILE,
+        )
+        print(f"Backtest chart saved: {path}")
+        _open_file(path)
 
     print("Done.")
 
