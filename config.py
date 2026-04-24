@@ -43,6 +43,9 @@ DRAWDOWN_MAX_SCORE: float = 1.5
 DRAWDOWN_FULL_PCT: float = 0.30
 """Drawdown percentage at which the full score is awarded (linear 0–30%)."""
 
+DRAWDOWN_WINDOW: int = 500
+"""Rolling window (trading days) used to find the local peak for drawdown calculation."""
+
 TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""
 

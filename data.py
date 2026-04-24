@@ -15,6 +15,7 @@ from config import (
     DOWNLOAD_PERIOD,
     DRAWDOWN_FULL_PCT,
     DRAWDOWN_MAX_SCORE,
+    DRAWDOWN_WINDOW,
     MA_WINDOWS,
     RSI_MAX_SCORE,
     RSI_PERIOD,
@@ -257,7 +258,7 @@ def _calc_drawdown(close: pd.Series) -> tuple[float, float]:
         (current_drawdown, max_drawdown) as negative fractions
         (e.g. -0.15 means 15% below peak).
     """
-    peak = close.cummax()
+    peak = close.rolling(window=DRAWDOWN_WINDOW).max()
     drawdown = (close - peak) / peak
     current_dd = float(drawdown.iloc[-1])
     max_dd = float(drawdown.min())
@@ -296,7 +297,7 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
     rsi_score = rsi_score.where(rsi > 35, RSI_MAX_SCORE)
 
     # Drawdown component: linear 0–DRAWDOWN_FULL_PCT
-    peak = close.cummax()
+    peak = close.rolling(window=DRAWDOWN_WINDOW).max()
     dd = ((close - peak) / peak).abs()
     dd_score = (dd / DRAWDOWN_FULL_PCT).clip(upper=1.0) * DRAWDOWN_MAX_SCORE
 
