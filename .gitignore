@@ -2,4 +2,4 @@
 __pycache__/
 *.pyc
 combined_chart.png
-combined_chart.html
+combined_chart*.html

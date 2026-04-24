@@ -12,17 +12,48 @@ TICKERS: list[dict] = [
     {
         "symbol": "^GSPC",
         "label": "S&P 500",
+        # S&P is broad and stable — the long-term MA200 is the dominant
+        # signal, so it gets the lion's share of weight (5.0).  Shorter MAs
+        # add minor sensitivity but aren't as meaningful for a diversified index.
         "ma_weights": {50: 0.5, 100: 1.5, 200: 5},
+        # S&P is a broad, moderate-volatility index.  Price stays relatively
+        # close to its MAs, so standard fade bands are appropriate.
+        "ma_fade_thresholds": {50: 0.07, 100: 0.10, 200: 0.15},
+        # A 25% drawdown is a significant bear market for the S&P; full
+        # drawdown score should be awarded well before a 2008-level crash.
+        "drawdown_full_pct": 0.25,
     },
     {
         "symbol": "^NDX",
         "label": "NASDAQ 100",
+        # NASDAQ swings harder on shorter timeframes due to tech concentration.
+        # Weight is shifted toward MA50/MA100 (1.0/2.0) to capture these moves,
+        # while MA200 is reduced (4.0) since NASDAQ can stay well below it
+        # during prolonged sector rotations without it being a strong buy signal.
         "ma_weights": {50: 1.0, 100: 2.0, 200: 4.0},
+        # NASDAQ is more volatile and tech-concentrated.  Price routinely
+        # deviates further from MAs, so wider fade bands prevent the score
+        # from dropping to zero too quickly during normal rallies.
+        "ma_fade_thresholds": {50: 0.10, 100: 0.14, 200: 0.20},
+        # NASDAQ drawdowns of 30–40% are not unusual (e.g. 2022 tech sell-off).
+        # A higher threshold avoids maxing out the drawdown score too early.
+        "drawdown_full_pct": 0.35,
     },
     {
         "symbol": "GC=F",
         "label": "Gold",
+        # Gold trends slowly and all three MAs carry roughly equal importance.
+        # Weight is spread more evenly (1.75/2.5/2.75) so no single MA
+        # dominates — short-term dips below MA50 are just as relevant as
+        # crossing below MA200 for a mean-reverting commodity.
         "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
+        # Gold is a low-volatility safe-haven asset.  It trades in tighter
+        # ranges around its MAs, so narrower fade bands make small deviations
+        # more meaningful for scoring.
+        "ma_fade_thresholds": {50: 0.05, 100: 0.08, 200: 0.12},
+        # Gold rarely draws down more than 15–20%.  A lower threshold ensures
+        # the drawdown component contributes meaningfully even in mild dips.
+        "drawdown_full_pct": 0.20,
     },
 ]
 
@@ -30,18 +61,6 @@ TICKERS: list[dict] = [
 
 MA_WINDOWS: list[int] = [50, 100, 200]
 """Moving-average window sizes applied to every ticker."""
-
-MA_FADE_THRESHOLDS: dict[int, float] = {50: 0.07, 100: 0.10, 200: 0.15}
-"""Per-window fade-out threshold for the MA score component.
-
-When the price is between 0% and this threshold above the MA, the score
-decays linearly from full weight to zero.  Beyond the threshold the
-score is zero.
-
-Shorter MAs track price closely, so even a small deviation is
-significant — hence a tighter band for MA50 (7%).  Longer MAs are
-slower-moving and price naturally drifts further from them, so MA200
-uses a wider band (15%) before the signal fades out completely."""
 
 RSI_PERIOD: int = 14
 """Look-back period for the RSI calculation."""
@@ -51,9 +70,6 @@ RSI_MAX_SCORE: float = 1.5
 
 DRAWDOWN_MAX_SCORE: float = 1.5
 """Maximum score the drawdown component can contribute."""
-
-DRAWDOWN_FULL_PCT: float = 0.30
-"""Drawdown percentage at which the full score is awarded (linear 0–30%)."""
 
 DRAWDOWN_WINDOW: int = 500
 """Rolling window (trading days) used to find the local peak for drawdown calculation."""

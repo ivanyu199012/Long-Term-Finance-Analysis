@@ -14,7 +14,7 @@ import subprocess
 import sys
 
 from chart import generate_chart
-from config import DRAWDOWN_FULL_PCT, DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE, TICKERS
+from config import DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE, TICKERS
 from data import fetch_ticker
 
 
@@ -34,7 +34,7 @@ def main() -> None:
         bs = td.buy_score
         rsi_val = float(td.rsi.iloc[-1])
         ma_max = sum(td.ma_weights.values())
-        print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {DRAWDOWN_FULL_PCT:.0%})")
+        print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {td.drawdown_full_pct:.0%})")
         print(f"  Price:  {td.current_price:>12,.2f}")
         for w, ma in td.moving_averages.items():
             pct = td.ma_pct_diffs[w]

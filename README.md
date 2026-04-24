@@ -18,36 +18,36 @@ Interactive technical-analysis dashboard for S&P 500 and Gold. Downloads daily d
 
 MA weights are configured per ticker:
 
-**S&P 500** (MA total: 7.0)
+**S&P 500** (MA total: 7.0, DD full at 25%)
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| MA200     | 5.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA200     | 5.0     | Full weight below MA, linear fade 0–15% above, 0 beyond |
 | MA100     | 1.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA50      | 0.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA50      | 0.5     | Full weight below MA, linear fade 0–7% above, 0 beyond |
 
-**NASDAQ 100** (MA total: 7.0)
-
-| Component | Max pts | Logic |
-|-----------|---------|-------|
-| MA200     | 5.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA100     | 1.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA50      | 0.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-
-**Gold** (MA total: 7.0)
+**NASDAQ 100** (MA total: 7.0, DD full at 35%)
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| MA200     | 2.75    | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA100     | 2.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA50      | 1.75    | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA200     | 4.0     | Full weight below MA, linear fade 0–20% above, 0 beyond |
+| MA100     | 2.0     | Full weight below MA, linear fade 0–14% above, 0 beyond |
+| MA50      | 1.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+
+**Gold** (MA total: 7.0, DD full at 20%)
+
+| Component | Max pts | Logic |
+|-----------|---------|-------|
+| MA200     | 2.75    | Full weight below MA, linear fade 0–12% above, 0 beyond |
+| MA100     | 2.5     | Full weight below MA, linear fade 0–8% above, 0 beyond |
+| MA50      | 1.75    | Full weight below MA, linear fade 0–5% above, 0 beyond |
 
 **Shared components**
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
 | RSI       | 1.5     | Step: full at RSI ≤ 35, half at RSI ≤ 45, 0 above 45 |
-| Drawdown  | 1.5     | Linear: 0 pts at 0% DD, full at 30% DD |
+| Drawdown  | 1.5     | Linear: 0 pts at 0% DD, full at per-ticker threshold (S&P: 25%, NASDAQ: 35%, Gold: 20%) |
 
 **Total possible: 10 pts** (clamped to 0–10)
 

@@ -13,10 +13,8 @@ import yfinance as yf
 
 from config import (
     DOWNLOAD_PERIOD,
-    DRAWDOWN_FULL_PCT,
     DRAWDOWN_MAX_SCORE,
     DRAWDOWN_WINDOW,
-    MA_FADE_THRESHOLDS,
     MA_WINDOWS,
     RSI_MAX_SCORE,
     RSI_PERIOD,
@@ -53,6 +51,8 @@ class TickerData:
     symbol: str
     label: str
     ma_weights: dict[int, float]
+    ma_fade_thresholds: dict[int, float]
+    drawdown_full_pct: float
     history: pd.DataFrame
     current_price: float
     moving_averages: dict[int, float]
@@ -68,7 +68,13 @@ class TickerData:
 # ── Public helpers ──────────────────────────────────────────────────
 
 
-def fetch_ticker(symbol: str, label: str, ma_weights: dict[int, float]) -> TickerData:
+def fetch_ticker(
+    symbol: str,
+    label: str,
+    ma_weights: dict[int, float],
+    ma_fade_thresholds: dict[int, float],
+    drawdown_full_pct: float,
+) -> TickerData:
     """Download one year of daily data and compute indicators.
 
     Parameters
@@ -112,13 +118,20 @@ def fetch_ticker(symbol: str, label: str, ma_weights: dict[int, float]) -> Ticke
 
     rsi = _calc_rsi(df["Close"])
     current_dd, max_dd = _calc_drawdown(df["Close"])
-    buy_score = _compute_buy_score(current_price, moving_averages, rsi, current_dd, max_dd, ma_weights)
-    score_series = _compute_score_series(df["Close"], rsi, ma_weights)
+    buy_score = _compute_buy_score(
+        current_price, moving_averages, rsi, current_dd, max_dd,
+        ma_weights, ma_fade_thresholds, drawdown_full_pct,
+    )
+    score_series = _compute_score_series(
+        df["Close"], rsi, ma_weights, ma_fade_thresholds, drawdown_full_pct,
+    )
 
     return TickerData(
         symbol=symbol,
         label=label,
         ma_weights=ma_weights,
+        ma_fade_thresholds=ma_fade_thresholds,
+        drawdown_full_pct=drawdown_full_pct,
         history=df,
         current_price=current_price,
         moving_averages=moving_averages,
@@ -142,18 +155,20 @@ def _compute_buy_score(
     current_drawdown: float,
     max_drawdown: float,
     ma_weights: dict[int, float],
+    ma_fade_thresholds: dict[int, float],
+    drawdown_full_pct: float,
 ) -> BuyScore:
     """Derive a 0–10 buy-in score from MA positioning, RSI, and drawdown.
 
     Scoring breakdown
     -----------------
     - MA component (0–7 pts): weighted per MA window — full weight when
-      price is below the MA, linear fade-out from 0% to 10% above,
-      zero beyond 10% (configurable via ``MA_WEIGHTS``).
+      price is below the MA, linear fade-out using per-ticker thresholds,
+      zero beyond threshold (configurable via ``ma_fade_thresholds``).
     - RSI component (0–1.5 pts): full score at RSI ≤ 35, half at
       RSI ≤ 45, zero above (configurable via ``RSI_MAX_SCORE``).
     - Drawdown component (0–1.5 pts): scaled linearly from 0% to
-      ``DRAWDOWN_FULL_PCT`` (configurable via ``DRAWDOWN_MAX_SCORE``).
+      per-ticker ``drawdown_full_pct`` (configurable via ``DRAWDOWN_MAX_SCORE``).
 
     The final score is clamped to [0, 10] and mapped to a suggestion
     string.
@@ -162,7 +177,7 @@ def _compute_buy_score(
     ma_breakdown: dict[int, float] = {}
     for window, ma in moving_averages.items():
         diff_pct = (current_price - ma) / ma
-        threshold = MA_FADE_THRESHOLDS[window]
+        threshold = ma_fade_thresholds[window]
         if diff_pct <= 0:
             score = ma_weights[window]
         elif diff_pct <= threshold:
@@ -183,7 +198,7 @@ def _compute_buy_score(
 
     # ── Drawdown component (0–1.5) ──
     dd_abs = abs(current_drawdown)
-    drawdown_score = min(dd_abs / DRAWDOWN_FULL_PCT, 1.0) * DRAWDOWN_MAX_SCORE
+    drawdown_score = min(dd_abs / drawdown_full_pct, 1.0) * DRAWDOWN_MAX_SCORE
 
     total = ma_score + rsi_score + drawdown_score
     total = max(0.0, min(10.0, total))
@@ -267,7 +282,13 @@ def _calc_drawdown(close: pd.Series) -> tuple[float, float]:
     return current_dd, max_dd
 
 
-def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int, float]) -> pd.Series:
+def _compute_score_series(
+    close: pd.Series,
+    rsi: pd.Series,
+    ma_weights: dict[int, float],
+    ma_fade_thresholds: dict[int, float],
+    drawdown_full_pct: float,
+) -> pd.Series:
     """Compute the buy-in score for every day in the series.
 
     Replicates the same MA + RSI + drawdown logic used in
@@ -281,7 +302,7 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
     for w, ma in mas.items():
         diff_pct = (close - ma) / ma
         weight = ma_weights[w]
-        threshold = MA_FADE_THRESHOLDS[w]
+        threshold = ma_fade_thresholds[w]
         score = pd.Series(0.0, index=close.index)
 
         # below MA → full score
@@ -302,7 +323,7 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
     # Drawdown component: linear 0–DRAWDOWN_FULL_PCT
     peak = close.rolling(window=DRAWDOWN_WINDOW).max()
     dd = ((close - peak) / peak).abs()
-    dd_score = (dd / DRAWDOWN_FULL_PCT).clip(upper=1.0) * DRAWDOWN_MAX_SCORE
+    dd_score = (dd / drawdown_full_pct).clip(upper=1.0) * DRAWDOWN_MAX_SCORE
 
     total = (ma_score + rsi_score + dd_score).clip(0.0, 10.0)
     return total
