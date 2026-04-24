@@ -5,7 +5,8 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from backtest import BacktestResult, _run_strategy, _score_to_multiplier, run_backtest
+from backtest import BacktestResult, _run_strategy, run_backtest
+from data import score_to_multiplier
 
 
 # ── Multiplier mapping tests ────────────────────────────────────────
@@ -15,25 +16,25 @@ class TestScoreToMultiplier:
     """Verify multiplier thresholds match _score_to_suggestion."""
 
     def test_aggressive(self):
-        assert _score_to_multiplier(9.0) == 2.25
+        assert score_to_multiplier(9.0) == 2.25
 
     def test_increase(self):
-        assert _score_to_multiplier(7.0) == 1.5
+        assert score_to_multiplier(7.0) == 1.5
 
     def test_regular(self):
-        assert _score_to_multiplier(5.0) == 1.0
+        assert score_to_multiplier(5.0) == 1.0
 
     def test_reduce(self):
-        assert _score_to_multiplier(3.0) == 0.5
+        assert score_to_multiplier(3.0) == 0.5
 
     def test_minimum(self):
-        assert _score_to_multiplier(1.0) == 0.25
+        assert score_to_multiplier(1.0) == 0.25
 
     def test_boundary_8_5(self):
-        assert _score_to_multiplier(8.5) == 2.25
+        assert score_to_multiplier(8.5) == 2.25
 
     def test_boundary_6_5(self):
-        assert _score_to_multiplier(6.5) == 1.5
+        assert score_to_multiplier(6.5) == 1.5
 
 
 # ── Strategy simulation tests ──────────────────────────────────────

@@ -17,6 +17,7 @@ from config import (
     DRAWDOWN_MAX_SCORE,
     DRAWDOWN_WINDOW,
     MA_WINDOWS,
+    MONTHLY_BUDGET,
     RSI_MAX_SCORE,
     RSI_PERIOD,
     TAIL_DAYS,
@@ -66,7 +67,91 @@ class TickerData:
     buy_score: BuyScore = None  # type: ignore[assignment]
 
 
+@dataclass
+class Allocation:
+    """Portfolio allocation recommendation for one ticker."""
+
+    label: str
+    weight_pct: float
+    amount: float
+
+
 # ── Public helpers ──────────────────────────────────────────────────
+
+
+def score_to_multiplier(score: float) -> float:
+    """Map a buy-in score (0–10) to an investment multiplier.
+
+    Uses the same thresholds as ``_score_to_suggestion``.
+    """
+    if score >= 8.5:
+        return 2.25
+    if score >= 6.5:
+        return 1.5
+    if score >= 4.5:
+        return 1.0
+    if score >= 2.5:
+        return 0.5
+    return 0.25
+
+
+def compute_allocation(tickers: list[TickerData]) -> list[Allocation]:
+    """Compute portfolio allocation from scores and base weights.
+
+    Steps:
+    1. Multiply each ticker's base_weight by its score multiplier.
+    2. Normalize to 100%.
+    3. Enforce minimum weight floors, re-normalizing the remainder.
+    4. Convert to ₩ amounts using ``MONTHLY_BUDGET``.
+    """
+    # Step 1: raw weights = base_weight × multiplier
+    raw: dict[str, float] = {}
+    base_weights: dict[str, float] = {}
+    min_weights: dict[str, float] = {}
+    for td in tickers:
+        mult = score_to_multiplier(td.buy_score.score)
+        # Retrieve base_weight and min_weight from the matching TICKERS config
+        from config import TICKERS
+        cfg = next(t for t in TICKERS if t["symbol"] == td.symbol)
+        base_weights[td.label] = cfg["base_weight"]
+        min_weights[td.label] = cfg["min_weight"]
+        raw[td.label] = cfg["base_weight"] * mult
+
+    # Step 2: normalize to 100%
+    total = sum(raw.values())
+    weights = {k: v / total for k, v in raw.items()}
+
+    # Step 3: enforce minimum floors
+    # If any weight is below its floor, set it to the floor and
+    # redistribute the remaining budget proportionally.
+    floored: dict[str, float] = {}
+    free_labels: list[str] = []
+    locked_total = 0.0
+
+    for label, w in weights.items():
+        if w < min_weights[label]:
+            floored[label] = min_weights[label]
+            locked_total += min_weights[label]
+        else:
+            free_labels.append(label)
+
+    if floored:
+        remaining = 1.0 - locked_total
+        free_total = sum(weights[l] for l in free_labels)
+        for label in free_labels:
+            floored[label] = weights[label] / free_total * remaining if free_total > 0 else remaining / len(free_labels)
+        weights = floored
+
+    # Step 4: convert to amounts
+    result = []
+    for td in tickers:
+        w = weights[td.label]
+        result.append(Allocation(
+            label=td.label,
+            weight_pct=w * 100,
+            amount=w * MONTHLY_BUDGET,
+        ))
+    return result
 
 
 def fetch_ticker(
@@ -219,20 +304,17 @@ def _compute_buy_score(
 
 def _score_to_suggestion(score: float, base_amount: float = BASE_AMOUNT) -> str:
     """Map a numeric score to a suggestion with concrete buy-in amount."""
-    if score >= 8.5:
-        multiplier = 2.25  # midpoint of 2.0–2.5
+    multiplier = score_to_multiplier(score)
+
+    if multiplier >= 2.25:
         label = "Aggressive buy-in"
-    elif score >= 6.5:
-        multiplier = 1.5
+    elif multiplier >= 1.5:
         label = "Increase buy-in"
-    elif score >= 4.5:
-        multiplier = 1.0
+    elif multiplier >= 1.0:
         label = "Regular buy-in"
-    elif score >= 2.5:
-        multiplier = 0.5
+    elif multiplier >= 0.5:
         label = "Reduce buy-in"
     else:
-        multiplier = 0.25
         label = "Minimum buy-in"
 
     amount = base_amount * multiplier

@@ -22,6 +22,10 @@ TICKERS: list[dict] = [
         # A 25% drawdown is a significant bear market for the S&P; full
         # drawdown score should be awarded well before a 2008-level crash.
         "drawdown_full_pct": 0.25,
+        # Base portfolio allocation weight.  S&P is the core holding.
+        "base_weight": 0.55,
+        # Minimum allocation floor to prevent abandoning the position.
+        "min_weight": 0.40,
     },
     {
         "symbol": "^NDX",
@@ -38,6 +42,10 @@ TICKERS: list[dict] = [
         # NASDAQ drawdowns of 30–40% are not unusual (e.g. 2022 tech sell-off).
         # A higher threshold avoids maxing out the drawdown score too early.
         "drawdown_full_pct": 0.35,
+        # Smallest base weight — growth satellite, not core.
+        "base_weight": 0.15,
+        # Low floor since it's a satellite position.
+        "min_weight": 0.05,
     },
     {
         "symbol": "GC=F",
@@ -54,6 +62,10 @@ TICKERS: list[dict] = [
         # Gold rarely draws down more than 15–20%.  A lower threshold ensures
         # the drawdown component contributes meaningfully even in mild dips.
         "drawdown_full_pct": 0.20,
+        # Hedge allocation — meaningful but not dominant.
+        "base_weight": 0.30,
+        # Maintain a meaningful hedge position at all times.
+        "min_weight": 0.20,
     },
 ]
 
@@ -75,7 +87,10 @@ DRAWDOWN_WINDOW: int = 500
 """Rolling window (trading days) used to find the local peak for drawdown calculation."""
 
 BASE_AMOUNT: float = 500_000.0
-"""Base monthly investment amount (₩) used to compute suggestion buy-in amounts."""
+"""Base monthly investment amount (₩) used to compute per-asset suggestion buy-in amounts."""
+
+MONTHLY_BUDGET: float = 1_000_000.0
+"""Total monthly investment budget (₩) used for portfolio allocation."""
 
 TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""

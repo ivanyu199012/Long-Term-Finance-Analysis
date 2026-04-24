@@ -14,12 +14,13 @@ from typing import Sequence
 import plotly.graph_objects as go
 from plotly.subplots import make_subplots
 
-from config import MA_STYLES, DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE
-from data import TickerData
+from config import MA_STYLES, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
+from data import Allocation, TickerData
 
 
 def generate_chart(
     tickers: Sequence[TickerData],
+    allocations: Sequence[Allocation] | None = None,
     output_path: str = OUTPUT_FILE,
 ) -> str:
     """Render the interactive chart and save it to *output_path*.
@@ -67,7 +68,7 @@ def generate_chart(
     )
 
     # Build the full HTML: score header + plotly chart
-    header_html = _build_score_header(tickers)
+    header_html = _build_score_header(tickers, allocations)
     chart_html = fig.to_html(include_plotlyjs=True, full_html=False)
 
     os.makedirs(os.path.dirname(output_path), exist_ok=True)
@@ -81,8 +82,16 @@ def generate_chart(
 # ── HTML builders ───────────────────────────────────────────────────
 
 
-def _build_score_header(tickers: Sequence[TickerData]) -> str:
+def _build_score_header(
+    tickers: Sequence[TickerData],
+    allocations: Sequence[Allocation] | None = None,
+) -> str:
     """Build an HTML summary bar with one card per ticker."""
+    # Build a lookup for allocation by label
+    alloc_map: dict[str, Allocation] = {}
+    if allocations:
+        alloc_map = {a.label: a for a in allocations}
+
     cards = []
     for td in tickers:
         bs = td.buy_score
@@ -98,6 +107,16 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
 
         ma_max = sum(td.ma_weights.values())
         dd_display = min(td.buy_score.current_drawdown, 0)
+
+        # Allocation line (if available)
+        alloc = alloc_map.get(td.label)
+        alloc_line = ""
+        if alloc:
+            alloc_line = (
+                f"<br><b style='font-size:13px'>Allocation: {alloc.weight_pct:.1f}% "
+                f"→ ₩{alloc.amount:,.0f}</b>"
+            )
+
         cards.append(
             f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
             f"padding:18px 24px;margin:0 8px;min-width:300px;"
@@ -121,6 +140,7 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
             f"<b>DD score: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f}</b> "
             f"(DD: {dd_display:.1%}, max: {bs.max_drawdown:.1%}, "
             f"full at {td.drawdown_full_pct:.0%})"
+            f"{alloc_line}"
             f"</div>"
             f"</div>"
         )
@@ -146,10 +166,19 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
             f"{est_detail}</div>"
         )
 
+    # Budget summary line
+    budget_line = ""
+    if allocations:
+        budget_line = (
+            f"<div style='text-align:center;font-size:13px;color:#333;"
+            f"margin-top:10px;font-weight:600'>"
+            f"Monthly Budget: ₩{MONTHLY_BUDGET:,.0f}</div>"
+        )
+
     return (
         f"<div style='display:flex;justify-content:center;"
         f"flex-wrap:wrap;margin:16px 8px 8px'>"
-        f"{''.join(cards)}</div>{disclaimer}{est_warning}"
+        f"{''.join(cards)}</div>{budget_line}{disclaimer}{est_warning}"
     )
 
 

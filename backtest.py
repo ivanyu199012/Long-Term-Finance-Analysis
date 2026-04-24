@@ -11,23 +11,7 @@ from dataclasses import dataclass
 import pandas as pd
 
 from config import BASE_AMOUNT
-from data import _calc_rsi, _compute_score_series
-
-
-# ── Score → multiplier mapping (mirrors _score_to_suggestion) ───────
-
-
-def _score_to_multiplier(score: float) -> float:
-    """Map a buy-in score to an investment multiplier."""
-    if score >= 8.5:
-        return 2.25
-    if score >= 6.5:
-        return 1.5
-    if score >= 4.5:
-        return 1.0
-    if score >= 2.5:
-        return 0.5
-    return 0.25
+from data import _calc_rsi, _compute_score_series, score_to_multiplier
 
 
 # ── Result containers ───────────────────────────────────────────────
@@ -111,7 +95,7 @@ def run_backtest(
     flat = _run_strategy(monthly_close, multipliers=None)
 
     # ── Score-based DCA (raw) ──
-    multipliers = monthly_scores.map(_score_to_multiplier)
+    multipliers = monthly_scores.map(score_to_multiplier)
     score_raw = _run_strategy(monthly_close, multipliers=multipliers)
 
     # ── Score-based DCA (normalized to same total as flat) ──

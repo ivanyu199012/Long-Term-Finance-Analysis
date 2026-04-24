@@ -16,8 +16,8 @@ import subprocess
 import sys
 
 from chart import generate_chart
-from config import DRAWDOWN_MAX_SCORE, OUTPUT_FILE, RSI_MAX_SCORE, TICKERS
-from data import fetch_ticker
+from config import DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE, TICKERS
+from data import compute_allocation, fetch_ticker
 
 
 def main() -> None:
@@ -59,8 +59,17 @@ def _run_dashboard() -> None:
         print()
 
     print("Generating interactive chart...")
-    path = generate_chart(tickers, output_path=OUTPUT_FILE)
+    allocations = compute_allocation(tickers)
+    path = generate_chart(tickers, allocations=allocations, output_path=OUTPUT_FILE)
     print(f"Chart saved: {path}")
+    print()
+
+    # Print allocation recommendation
+    print("=" * 60)
+    print(f"  Monthly Allocation (₩{MONTHLY_BUDGET:,.0f} budget)")
+    print("=" * 60)
+    for a in allocations:
+        print(f"  {a.label:<15} {a.weight_pct:>5.1f}%  →  ₩{a.amount:>12,.0f}")
     print()
 
     _open_file(path)
