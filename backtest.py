@@ -96,6 +96,11 @@ def run_backtest(
     monthly_close = monthly_close.loc[common_idx]
     monthly_scores = monthly_scores.loc[common_idx]
 
+    # Shift scores by 1 month to avoid lookahead bias:
+    # use last month's signal to decide this month's investment.
+    monthly_scores = monthly_scores.shift(1).dropna()
+    monthly_close = monthly_close.loc[monthly_scores.index]
+
     # Trim to target period (extra data was only needed for warm-up)
     target_months = {"5y": 60, "10y": 120}.get(period)
     if target_months and len(monthly_close) > target_months:
