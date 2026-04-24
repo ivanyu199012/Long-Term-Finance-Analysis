@@ -17,7 +17,7 @@ TICKERS: list[dict] = [
     {
         "symbol": "^NDX",
         "label": "NASDAQ 100",
-        "ma_weights": {50: 0.5, 100: 1.5, 200: 5},
+        "ma_weights": {50: 1.0, 100: 2.0, 200: 4.0},
     },
     {
         "symbol": "GC=F",
