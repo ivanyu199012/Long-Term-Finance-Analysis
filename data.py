@@ -163,9 +163,9 @@ def _compute_buy_score(
 
     # ── RSI component (0–2) ──
     latest_rsi = float(rsi.iloc[-1])
-    if latest_rsi <= 30:
+    if latest_rsi <= 35:
         rsi_score = RSI_MAX_SCORE
-    elif latest_rsi <= 40:
+    elif latest_rsi <= 45:
         rsi_score = RSI_MAX_SCORE * 0.5
     else:
         rsi_score = 0.0
@@ -285,9 +285,7 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
 
 
 def _calc_rsi(series: pd.Series, period: int = RSI_PERIOD) -> pd.Series:
-    """Compute the Relative Strength Index for *series*.
-
-    Uses the simple rolling-average method (Cutler's RSI).
+    """Compute the Relative Strength Index using Wilder's EWM smoothing.
 
     Parameters
     ----------
@@ -302,7 +300,11 @@ def _calc_rsi(series: pd.Series, period: int = RSI_PERIOD) -> pd.Series:
         RSI values in the range 0–100.
     """
     delta = series.diff()
-    gain = delta.where(delta > 0, 0.0).rolling(window=period).mean()
-    loss = (-delta.where(delta < 0, 0.0)).rolling(window=period).mean()
-    rs = gain / loss
+    gain = delta.clip(lower=0)
+    loss = -delta.clip(upper=0)
+
+    avg_gain = gain.ewm(alpha=1 / period, adjust=False).mean()
+    avg_loss = loss.ewm(alpha=1 / period, adjust=False).mean()
+
+    rs = avg_gain / avg_loss.replace(0, float("nan"))
     return 100 - (100 / (1 + rs))
