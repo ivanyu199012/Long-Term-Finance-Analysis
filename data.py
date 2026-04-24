@@ -169,7 +169,7 @@ def _compute_buy_score(
         ma_breakdown[window] = score
     ma_score = sum(ma_breakdown.values())
 
-    # ── RSI component (0–2) ──
+    # ── RSI component (0–1.5) ──
     latest_rsi = float(rsi.iloc[-1])
     if latest_rsi <= 35:
         rsi_score = RSI_MAX_SCORE
@@ -178,7 +178,7 @@ def _compute_buy_score(
     else:
         rsi_score = 0.0
 
-    # ── Drawdown component (0–2) ──
+    # ── Drawdown component (0–1.5) ──
     dd_abs = abs(current_drawdown)
     drawdown_score = min(dd_abs / DRAWDOWN_FULL_PCT, 1.0) * DRAWDOWN_MAX_SCORE
 

@@ -6,7 +6,7 @@ Interactive technical-analysis dashboard for S&P 500 and Gold. Downloads daily d
 
 - **Interactive Plotly charts** — zoom, pan, hover for exact values
 - **Moving averages** — MA50 / MA100 / MA200 with % distance from current price
-- **RSI oscillator** — with overbought/oversold shading
+- **RSI oscillator** — Wilder's EWM smoothing with overbought/oversold shading
 - **Drawdown tracking** — current and max drawdown from peak
 - **Buy-in score (0–10)** — rules-based heuristic from MA positioning + RSI + drawdown
 - **Historical score chart** — score plotted over the last 100 days with suggestion threshold lines
@@ -22,31 +22,31 @@ MA weights are configured per ticker:
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| MA200     | 5.0     | Full weight if price is below MA200 |
-| MA100     | 1.5     | Full weight if price is below MA100 |
-| MA50      | 0.5     | Full weight if price is below MA50  |
+| MA200     | 5.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA100     | 1.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA50      | 0.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
 
 **NASDAQ 100** (MA total: 7.0)
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| MA200     | 5.0     | Full weight if price is below MA200 |
-| MA100     | 1.5     | Full weight if price is below MA100 |
-| MA50      | 0.5     | Full weight if price is below MA50  |
+| MA200     | 5.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA100     | 1.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA50      | 0.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
 
 **Gold** (MA total: 7.0)
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| MA200     | 2.75    | Full weight if price is below MA200 |
-| MA100     | 2.5     | Full weight if price is below MA100 |
-| MA50      | 1.75    | Full weight if price is below MA50  |
+| MA200     | 2.75    | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA100     | 2.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+| MA50      | 1.75    | Full weight below MA, linear fade 0–10% above, 0 beyond |
 
 **Shared components**
 
 | Component | Max pts | Logic |
 |-----------|---------|-------|
-| RSI       | 1.5     | Step: full at RSI ≤ 30, half at RSI ≤ 40, 0 above 40 |
+| RSI       | 1.5     | Step: full at RSI ≤ 35, half at RSI ≤ 45, 0 above 45 |
 | Drawdown  | 1.5     | Linear: 0 pts at 0% DD, full at 30% DD |
 
 **Total possible: 10 pts** (clamped to 0–10)
