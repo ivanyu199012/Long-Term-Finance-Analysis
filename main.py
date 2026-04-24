@@ -80,7 +80,7 @@ def _run_backtest() -> None:
     """Download data and run backtest for each ticker at 5y and 10y."""
     import yfinance as yf
 
-    from backtest import print_backtest, run_backtest
+    from backtest import print_backtest, print_portfolio_backtest, run_backtest, run_portfolio_backtest
 
     print("=" * 60)
     print("  FinAnalysis — Backtest: Flat DCA vs Score-based DCA")
@@ -108,6 +108,32 @@ def _run_backtest() -> None:
 
             result = run_backtest(close, ma_weights, ma_fade, dd_full, label, period)
             print_backtest(result)
+
+    # ── Portfolio-level backtest ──
+    for period in ("5y", "10y"):
+        download_period = {"5y": "7y", "10y": "12y"}[period]
+        asset_data = []
+        for t in TICKERS:
+            print(f"[{t['label']}] Downloading {download_period} data for {t['symbol']} (portfolio {period})...")
+            df = yf.download(t["symbol"], period=download_period, auto_adjust=True)
+            df.columns = df.columns.get_level_values(0)
+            close = df["Close"].dropna()
+            if len(close) < 252:
+                print(f"  ⚠ Not enough data for {period}, skipping.")
+                continue
+            asset_data.append({
+                "label": t["label"],
+                "close": close,
+                "ma_weights": t["ma_weights"],
+                "ma_fade_thresholds": t["ma_fade_thresholds"],
+                "drawdown_full_pct": t["drawdown_full_pct"],
+                "base_weight": t["base_weight"],
+                "min_weight": t["min_weight"],
+            })
+
+        if len(asset_data) == len(TICKERS):
+            portfolio_result = run_portfolio_backtest(asset_data, period)
+            print_portfolio_backtest(portfolio_result)
 
     print("Done.")
 
