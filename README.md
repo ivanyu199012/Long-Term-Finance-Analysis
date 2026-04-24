@@ -112,3 +112,11 @@ Edit `config.py` to:
 ## Output
 
 `out/combined_chart.html` — opens automatically on Windows after generation.
+
+## Testing
+
+```bash
+uv run pytest
+```
+
+Runs scenario-based tests that verify the scoring logic against real-world market conditions (bull market, correction, crash, rally, pullback) for all three assets. No network calls — all inputs are synthetic.
