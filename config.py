@@ -74,6 +74,9 @@ DRAWDOWN_MAX_SCORE: float = 1.5
 DRAWDOWN_WINDOW: int = 500
 """Rolling window (trading days) used to find the local peak for drawdown calculation."""
 
+BASE_AMOUNT: float = 500_000.0
+"""Base monthly investment amount (₩) used to compute suggestion buy-in amounts."""
+
 TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""
 

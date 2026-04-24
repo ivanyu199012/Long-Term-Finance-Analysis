@@ -12,6 +12,7 @@ import pandas as pd
 import yfinance as yf
 
 from config import (
+    BASE_AMOUNT,
     DOWNLOAD_PERIOD,
     DRAWDOWN_MAX_SCORE,
     DRAWDOWN_WINDOW,
@@ -216,7 +217,7 @@ def _compute_buy_score(
     )
 
 
-def _score_to_suggestion(score: float, base_amount: float = 500_000.0) -> str:
+def _score_to_suggestion(score: float, base_amount: float = BASE_AMOUNT) -> str:
     """Map a numeric score to a suggestion with concrete buy-in amount."""
     if score >= 8.5:
         multiplier = 2.25  # midpoint of 2.0–2.5

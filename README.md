@@ -63,6 +63,8 @@ MA weights are configured per ticker:
 
 > ⚠ This is a technical indicator score only — not financial advice.
 
+> ⚠ **Downside double-counting:** The MA and drawdown components are highly correlated — when price drops below MAs, drawdown also increases. This means the system intentionally becomes more aggressive during downturns, which concentrates buying into falling markets. This is by design for a DCA timing tool, but be aware it may increase risk during prolonged bear markets.
+
 ## Estimated data handling
 
 When yfinance returns incomplete rows (e.g. today's data before market close), the missing `Close`/`Open`/`High`/`Low` values are filled with the mean of the previous day's close and the current live price. This keeps MA and drawdown calculations valid without dropping the row entirely.
@@ -105,6 +107,7 @@ Edit `config.py` to:
 - Change moving-average windows (`MA_WINDOWS`)
 - Adjust RSI period and max score (`RSI_PERIOD`, `RSI_MAX_SCORE`)
 - Adjust drawdown max score (`DRAWDOWN_MAX_SCORE`)
+- Change the base monthly investment amount (`BASE_AMOUNT`)
 - Change the download period (`DOWNLOAD_PERIOD`)
 - Change the number of days shown (`TAIL_DAYS`)
 - Modify chart colours and styles (`MA_STYLES`)
