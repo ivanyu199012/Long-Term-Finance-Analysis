@@ -158,7 +158,14 @@ def _compute_buy_score(
     # ── MA component (0–7) ──
     ma_breakdown: dict[int, float] = {}
     for window, ma in moving_averages.items():
-        ma_breakdown[window] = ma_weights[window] if current_price < ma else 0.0
+        diff_pct = (current_price - ma) / ma
+        if diff_pct <= 0:
+            score = ma_weights[window]
+        elif diff_pct <= 0.10:
+            score = ma_weights[window] * (1 - diff_pct / 0.10)
+        else:
+            score = 0.0
+        ma_breakdown[window] = score
     ma_score = sum(ma_breakdown.values())
 
     # ── RSI component (0–2) ──
@@ -265,15 +272,20 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
     # MAs
     mas = {w: close.rolling(window=w).mean() for w in MA_WINDOWS}
 
-    # MA component: full weight when price < MA
+    # MA component: full weight when price < MA, linear fade 0–10% above
     ma_score = pd.Series(0.0, index=close.index)
     for w, ma in mas.items():
-        ma_score = ma_score + (close < ma).astype(float) * ma_weights[w]
+        diff_pct = (close - ma) / ma
+        weight = ma_weights[w]
+        score = pd.Series(0.0, index=close.index)
+        score = score.where(diff_pct > 0.10, weight * (1 - diff_pct / 0.10))
+        score = score.where(diff_pct > 0, weight)
+        ma_score = ma_score + score
 
-    # RSI component: step-based
+    # RSI component: step-based (35/45 thresholds)
     rsi_score = pd.Series(0.0, index=close.index)
-    rsi_score = rsi_score.where(rsi > 40, RSI_MAX_SCORE * 0.5)
-    rsi_score = rsi_score.where(rsi > 30, RSI_MAX_SCORE)
+    rsi_score = rsi_score.where(rsi > 45, RSI_MAX_SCORE * 0.5)
+    rsi_score = rsi_score.where(rsi > 35, RSI_MAX_SCORE)
 
     # Drawdown component: linear 0–DRAWDOWN_FULL_PCT
     peak = close.cummax()
