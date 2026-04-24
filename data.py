@@ -320,7 +320,7 @@ def _compute_score_series(
     rsi_score = rsi_score.where(rsi > 45, RSI_MAX_SCORE * 0.5)
     rsi_score = rsi_score.where(rsi > 35, RSI_MAX_SCORE)
 
-    # Drawdown component: linear 0–DRAWDOWN_FULL_PCT
+    # Drawdown component: linear 0–drawdown_full_pct
     peak = close.rolling(window=DRAWDOWN_WINDOW).max()
     dd = ((close - peak) / peak).abs()
     dd_score = (dd / drawdown_full_pct).clip(upper=1.0) * DRAWDOWN_MAX_SCORE

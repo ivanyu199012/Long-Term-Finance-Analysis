@@ -116,7 +116,8 @@ def _build_score_header(tickers: Sequence[TickerData]) -> str:
             f"<b>RSI score: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}</b> "
             f"(RSI: {latest_rsi:.1f})<br>"
             f"<b>DD score: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f}</b> "
-            f"(DD: {dd_display:.1%}, max: {bs.max_drawdown:.1%})"
+            f"(DD: {dd_display:.1%}, max: {bs.max_drawdown:.1%}, "
+            f"full at {td.drawdown_full_pct:.0%})"
             f"</div>"
             f"</div>"
         )

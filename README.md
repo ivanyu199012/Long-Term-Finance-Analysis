@@ -1,6 +1,6 @@
 # FinAnalysis
 
-Interactive technical-analysis dashboard for S&P 500 and Gold. Downloads daily data, computes moving averages, RSI, and drawdown, generates a buy-in score, and outputs a self-contained HTML chart you can open in any browser.
+Interactive technical-analysis dashboard for S&P 500, NASDAQ 100, and Gold. Downloads daily data, computes moving averages, RSI, and drawdown, generates a buy-in score, and outputs a self-contained HTML chart you can open in any browser.
 
 ## Features
 
@@ -101,10 +101,10 @@ main.py     — Entry point
 
 Edit `config.py` to:
 
-- Add/remove tickers in the `TICKERS` list (each with its own `ma_weights`)
+- Add/remove tickers in the `TICKERS` list (each with its own `ma_weights`, `ma_fade_thresholds`, and `drawdown_full_pct`)
 - Change moving-average windows (`MA_WINDOWS`)
 - Adjust RSI period and max score (`RSI_PERIOD`, `RSI_MAX_SCORE`)
-- Adjust drawdown max score and full-credit threshold (`DRAWDOWN_MAX_SCORE`, `DRAWDOWN_FULL_PCT`)
+- Adjust drawdown max score (`DRAWDOWN_MAX_SCORE`)
 - Change the download period (`DOWNLOAD_PERIOD`)
 - Change the number of days shown (`TAIL_DAYS`)
 - Modify chart colours and styles (`MA_STYLES`)
