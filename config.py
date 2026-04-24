@@ -31,6 +31,18 @@ TICKERS: list[dict] = [
 MA_WINDOWS: list[int] = [50, 100, 200]
 """Moving-average window sizes applied to every ticker."""
 
+MA_FADE_THRESHOLDS: dict[int, float] = {50: 0.07, 100: 0.10, 200: 0.15}
+"""Per-window fade-out threshold for the MA score component.
+
+When the price is between 0% and this threshold above the MA, the score
+decays linearly from full weight to zero.  Beyond the threshold the
+score is zero.
+
+Shorter MAs track price closely, so even a small deviation is
+significant — hence a tighter band for MA50 (7%).  Longer MAs are
+slower-moving and price naturally drifts further from them, so MA200
+uses a wider band (15%) before the signal fades out completely."""
+
 RSI_PERIOD: int = 14
 """Look-back period for the RSI calculation."""
 

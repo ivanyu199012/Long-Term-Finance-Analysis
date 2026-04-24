@@ -16,6 +16,7 @@ from config import (
     DRAWDOWN_FULL_PCT,
     DRAWDOWN_MAX_SCORE,
     DRAWDOWN_WINDOW,
+    MA_FADE_THRESHOLDS,
     MA_WINDOWS,
     RSI_MAX_SCORE,
     RSI_PERIOD,
@@ -161,10 +162,11 @@ def _compute_buy_score(
     ma_breakdown: dict[int, float] = {}
     for window, ma in moving_averages.items():
         diff_pct = (current_price - ma) / ma
+        threshold = MA_FADE_THRESHOLDS[window]
         if diff_pct <= 0:
             score = ma_weights[window]
-        elif diff_pct <= 0.10:
-            score = ma_weights[window] * (1 - diff_pct / 0.10)
+        elif diff_pct <= threshold:
+            score = ma_weights[window] * (1 - diff_pct / threshold)
         else:
             score = 0.0
         ma_breakdown[window] = score
@@ -274,21 +276,22 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
     # MAs
     mas = {w: close.rolling(window=w).mean() for w in MA_WINDOWS}
 
-    # MA component: full weight when price < MA, linear fade 0–10% above
+    # MA component: full weight when price < MA, linear fade per window threshold
     ma_score = pd.Series(0.0, index=close.index)
     for w, ma in mas.items():
         diff_pct = (close - ma) / ma
         weight = ma_weights[w]
+        threshold = MA_FADE_THRESHOLDS[w]
         score = pd.Series(0.0, index=close.index)
 
         # below MA → full score
         score = score.where(diff_pct > 0, weight)
 
-        # between 0 and 10% → linear decay
-        mask = (diff_pct > 0) & (diff_pct <= 0.10)
-        score[mask] = weight * (1 - diff_pct[mask] / 0.10)
+        # between 0 and threshold → linear decay
+        mask = (diff_pct > 0) & (diff_pct <= threshold)
+        score[mask] = weight * (1 - diff_pct[mask] / threshold)
         
-        # above 10% → already 0
+        # above threshold → already 0
         ma_score = ma_score + score
 
     # RSI component: step-based (35/45 thresholds)
