@@ -1,11 +1,13 @@
 """FinAnalysis — entry point.
 
 Downloads market data, generates a combined technical-analysis chart,
-and opens the resulting image.
+and opens the resulting HTML file.  Also supports a ``--backtest`` mode
+that compares flat DCA vs score-based DCA over 5-year and 10-year periods.
 
 Usage::
 
-    python main.py
+    python main.py              # dashboard mode (default)
+    python main.py --backtest   # run backtest comparison
 """
 
 from __future__ import annotations
@@ -19,6 +21,14 @@ from data import fetch_ticker
 
 
 def main() -> None:
+    """Dispatch to dashboard or backtest mode based on CLI args."""
+    if "--backtest" in sys.argv:
+        _run_backtest()
+    else:
+        _run_dashboard()
+
+
+def _run_dashboard() -> None:
     """Fetch data for every configured ticker, render the chart, and open it."""
     print("=" * 60)
     print("  FinAnalysis — Technical Analysis Dashboard")
@@ -54,6 +64,42 @@ def main() -> None:
     print()
 
     _open_file(path)
+    print("Done.")
+
+
+def _run_backtest() -> None:
+    """Download data and run backtest for each ticker at 5y and 10y."""
+    import yfinance as yf
+
+    from backtest import print_backtest, run_backtest
+
+    print("=" * 60)
+    print("  FinAnalysis — Backtest: Flat DCA vs Score-based DCA")
+    print("=" * 60)
+    print()
+
+    for t in TICKERS:
+        symbol = t["symbol"]
+        label = t["label"]
+        ma_weights = t["ma_weights"]
+        ma_fade = t["ma_fade_thresholds"]
+        dd_full = t["drawdown_full_pct"]
+
+        for period in ("5y", "10y"):
+            # Download extra 2y to cover rolling window warm-up (~500 trading days)
+            download_period = {"5y": "7y", "10y": "12y"}[period]
+            print(f"[{label}] Downloading {download_period} data for {symbol} ({period} backtest)...")
+            df = yf.download(symbol, period=download_period, auto_adjust=True)
+            df.columns = df.columns.get_level_values(0)
+            close = df["Close"].dropna()
+
+            if len(close) < 252:  # need at least ~1 year
+                print(f"  ⚠ Not enough data for {period}, skipping.")
+                continue
+
+            result = run_backtest(close, ma_weights, ma_fade, dd_full, label, period)
+            print_backtest(result)
+
     print("Done.")
 
 

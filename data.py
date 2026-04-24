@@ -76,7 +76,7 @@ def fetch_ticker(
     ma_fade_thresholds: dict[int, float],
     drawdown_full_pct: float,
 ) -> TickerData:
-    """Download one year of daily data and compute indicators.
+    """Download daily data and compute indicators.
 
     Parameters
     ----------

@@ -12,6 +12,7 @@ Interactive technical-analysis dashboard for S&P 500, NASDAQ 100, and Gold. Down
 - **Historical score chart** — score plotted over the last 100 days with suggestion threshold lines
 - **Per-product MA weights** — each ticker can have its own MA weight configuration
 - **Score breakdown** — see exactly how many points each indicator contributes
+- **Backtest** — compare flat DCA vs score-based DCA over 5y and 10y periods
 - **Single HTML output** — no server needed, just open the file
 
 ## Score methodology
@@ -80,12 +81,16 @@ When yfinance returns incomplete rows (e.g. today's data before market close), t
 ## Quick start
 
 ```bash
-# Using uv (handles dependencies automatically)
+# Dashboard mode (default) — using uv
 uv run main.py
+
+# Backtest mode — compare flat DCA vs score-based DCA (5y and 10y)
+uv run main.py --backtest
 
 # Or using pip
 pip install -r requirements.txt
 python main.py
+python main.py --backtest
 ```
 
 On Windows you can also double-click `run.bat`.
@@ -93,10 +98,12 @@ On Windows you can also double-click `run.bat`.
 ## Project structure
 
 ```
-config.py   — Ticker list, per-product MA weights, RSI/DD settings, chart styles
-data.py     — Data fetching (yfinance) and indicator/score calculations
-chart.py    — Plotly chart rendering and HTML output (price, RSI, score panels)
-main.py     — Entry point
+config.py     — Ticker list, per-product MA weights, RSI/DD settings, chart styles
+data.py       — Data fetching (yfinance) and indicator/score calculations
+chart.py      — Plotly chart rendering and HTML output (price, RSI, score panels)
+backtest.py   — Backtest engine: flat DCA vs score-based DCA comparison
+main.py       — Entry point (dashboard or --backtest mode)
+tests/        — Scenario-based scoring tests and backtest tests
 ```
 
 ## Configuration
@@ -107,6 +114,7 @@ Edit `config.py` to:
 - Change moving-average windows (`MA_WINDOWS`)
 - Adjust RSI period and max score (`RSI_PERIOD`, `RSI_MAX_SCORE`)
 - Adjust drawdown max score (`DRAWDOWN_MAX_SCORE`)
+- Change the drawdown rolling window (`DRAWDOWN_WINDOW`)
 - Change the base monthly investment amount (`BASE_AMOUNT`)
 - Change the download period (`DOWNLOAD_PERIOD`)
 - Change the number of days shown (`TAIL_DAYS`)
@@ -122,4 +130,18 @@ Edit `config.py` to:
 uv run pytest
 ```
 
-Runs scenario-based tests that verify the scoring logic against real-world market conditions (bull market, correction, crash, rally, pullback) for all three assets. No network calls — all inputs are synthetic.
+Runs scenario-based tests that verify the scoring logic against real-world market conditions (bull market, correction, crash, rally, pullback) for all three assets, plus backtest simulation tests. No network calls — all inputs are synthetic.
+
+## Backtest
+
+```bash
+uv run main.py --backtest
+```
+
+Compares two DCA strategies over 5-year and 10-year periods for each ticker:
+
+- **Flat DCA** — invest a fixed `BASE_AMOUNT` every month
+- **Score-based DCA (raw)** — invest `BASE_AMOUNT × multiplier` based on the monthly score. Total invested differs from flat.
+- **Score-based DCA (normalized)** — same as raw but scaled so total invested matches flat DCA. Apples-to-apples return comparison.
+
+Metrics reported: total invested, portfolio value, total return %, and max drawdown %.
