@@ -145,11 +145,12 @@ def _compute_buy_score(
 
     Scoring breakdown
     -----------------
-    - MA component (0–7 pts): weighted per MA window — longer-term
-      averages carry more weight (configurable via ``MA_WEIGHTS``).
-    - RSI component (0–2 pts): scaled linearly so RSI 30 or lower
-      = max, RSI 70 or higher = 0 (configurable via ``RSI_MAX_SCORE``).
-    - Drawdown component (0–2 pts): scaled linearly from 0% to
+    - MA component (0–7 pts): weighted per MA window — full weight when
+      price is below the MA, linear fade-out from 0% to 10% above,
+      zero beyond 10% (configurable via ``MA_WEIGHTS``).
+    - RSI component (0–1.5 pts): full score at RSI ≤ 35, half at
+      RSI ≤ 45, zero above (configurable via ``RSI_MAX_SCORE``).
+    - Drawdown component (0–1.5 pts): scaled linearly from 0% to
       ``DRAWDOWN_FULL_PCT`` (configurable via ``DRAWDOWN_MAX_SCORE``).
 
     The final score is clamped to [0, 10] and mapped to a suggestion

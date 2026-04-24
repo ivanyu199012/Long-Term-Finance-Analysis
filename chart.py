@@ -246,6 +246,8 @@ def _add_rsi_traces(
 
     for level, color, label in [
         (70, "red", "Overbought (70)"),
+        (45, "orange", "RSI score 0 (45)"),
+        (35, "teal", "RSI score full (35)"),
         (30, "green", "Oversold (30)"),
     ]:
         fig.add_hline(
