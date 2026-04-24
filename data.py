@@ -279,8 +279,15 @@ def _compute_score_series(close: pd.Series, rsi: pd.Series, ma_weights: dict[int
         diff_pct = (close - ma) / ma
         weight = ma_weights[w]
         score = pd.Series(0.0, index=close.index)
-        score = score.where(diff_pct > 0.10, weight * (1 - diff_pct / 0.10))
+
+        # below MA → full score
         score = score.where(diff_pct > 0, weight)
+
+        # between 0 and 10% → linear decay
+        mask = (diff_pct > 0) & (diff_pct <= 0.10)
+        score[mask] = weight * (1 - diff_pct[mask] / 0.10)
+        
+        # above 10% → already 0
         ma_score = ma_score + score
 
     # RSI component: step-based (35/45 thresholds)
