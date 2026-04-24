@@ -111,4 +111,4 @@ Edit `config.py` to:
 
 ## Output
 
-`combined_chart.html` — opens automatically on Windows after generation.
+`out/combined_chart.html` — opens automatically on Windows after generation.

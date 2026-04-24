@@ -8,6 +8,7 @@ result is saved as a self-contained HTML file.
 
 from __future__ import annotations
 
+import os
 from typing import Sequence
 
 import plotly.graph_objects as go
@@ -68,6 +69,8 @@ def generate_chart(
     # Build the full HTML: score header + plotly chart
     header_html = _build_score_header(tickers)
     chart_html = fig.to_html(include_plotlyjs=True, full_html=False)
+
+    os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
     with open(output_path, "w", encoding="utf-8") as fh:
         fh.write(_wrap_html(header_html, chart_html))
