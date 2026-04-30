@@ -192,7 +192,7 @@ def _fetch_single_day(auth_key: str, date_str: str) -> float | None:
         )
         resp.raise_for_status()
         data = resp.json()
-    except (requests.RequestException, ValueError):
+    except (requests.RequestException, ValueError, Exception):
         return None
 
     # The API returns a list of products; filter for 금 1Kg

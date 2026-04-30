@@ -223,7 +223,7 @@ Create `tests/test_fetchers_pykrx.py`:
 
 ---
 
-## Phase 3: Add KRX Gold Data Source ⬜
+## Phase 3: Add KRX Gold Data Source ✅
 
 ### Task 3.1: Implement `src/fetchers/krx_gold.py` ✅
 
@@ -274,16 +274,16 @@ Add to `TICKERS_KR` in `src/config.py`:
 
 - **Verify:** `load_dotenv()` picks up the key ✅
 
-### Task 3.5: Write tests for KRX Gold fetcher
+### Task 3.5: Write tests for KRX Gold fetcher ✅
 
 Create `tests/test_fetchers_krx_gold.py`:
 - Mock HTTP requests to KRX API
-- Verify filtering for "금 1Kg"
+- Verify filtering for "금 1Kg" (case-insensitive)
 - Verify date parsing and DataFrame output
 - Verify caching logic (reads existing CSV, appends new data)
 - Verify rate-limiting (sleep called between requests)
 
-- **Verify:** `uv run pytest tests/test_fetchers_krx_gold.py` passes
+- **Verify:** `uv run pytest tests/test_fetchers_krx_gold.py` passes ✅ (12 tests)
 
 ---
 
