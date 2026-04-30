@@ -577,7 +577,8 @@ def _build_backtest_header(
         by_period.setdefault(comp.period, []).append(comp)
 
     rows_html: list[str] = []
-    for period in sorted(by_period.keys()):
+    period_order = sorted(by_period.keys(), key=lambda p: int(p.replace("y", "")))
+    for period in period_order:
         cards: list[str] = []
         for comp in by_period[period]:
             flat = comp.flat
@@ -607,7 +608,7 @@ def _build_backtest_header(
     # Portfolio cards in a separate row
     if portfolio_comparisons:
         port_cards: list[str] = []
-        for pc in sorted(portfolio_comparisons, key=lambda x: x.period):
+        for pc in sorted(portfolio_comparisons, key=lambda x: int(x.period.replace("y", ""))):
             flat_p = pc.flat
             score_p = pc.score_alloc
             diff_p = score_p.total_return_pct - flat_p.total_return_pct

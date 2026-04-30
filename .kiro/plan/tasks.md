@@ -151,6 +151,8 @@ This replaces the old `fetch_ticker()` from `data.py`.
 - `run.bat`: change to `uv run python -m src.main`
 - `.gitignore`: add `.env` and `data/`
 - Delete old root-level `data.py`, `config.py`, `chart.py`, `backtest.py`, `main.py` (now in `src/`)
+- Fix: `src/allocation.py` had stale `from config import` → updated to `from src.config import`
+- Fix: backtest dashboard card layout — grouped by period (row 1: 5y tickers, row 2: 10y tickers, row 3: portfolio cards)
 
 - **Verify:** `uv run python -m src.main` works, `uv run pytest` passes ✅
 
