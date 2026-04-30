@@ -55,7 +55,7 @@ All parameters passed in (no imports from config inside the functions). Import `
 
 > Note: Also created a minimal `src/allocation.py` with `score_to_multiplier` since `score_to_suggestion` imports it. Task 1.4 will flesh it out with `compute_allocation`.
 
-### Task 1.4: Extract `src/allocation.py`
+### Task 1.4: Extract `src/allocation.py` ✅
 
 Move from `data.py`:
 - `score_to_multiplier(score)` 
@@ -63,7 +63,9 @@ Move from `data.py`:
 
 Import `Allocation` from `src.models`, config values from `src.config`.
 
-- **Verify:** `backtest.py` and `main.py` can both import from here without circular deps
+- **Verify:** `backtest.py` and `main.py` can both import from here without circular deps ✅
+
+> Note: `compute_allocation` accepts optional `ticker_configs` and `monthly_budget` params for explicit injection, falling back to config imports when not provided. Config imports currently reference root-level `config.py` — will be updated to `src.config` in Task 1.5.
 
 ### Task 1.5: Move `config.py` → `src/config.py`
 
