@@ -2,7 +2,7 @@
 
 Each test simulates a specific market condition by constructing fake
 MA values, RSI, and drawdown inputs, then verifies that
-``_compute_buy_score`` produces a score in the expected range and
+``compute_buy_score`` produces a score in the expected range and
 maps to the correct suggestion tier.
 
 No network calls are made — all inputs are synthetic.
@@ -13,7 +13,7 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from data import _compute_buy_score
+from src.indicators import compute_buy_score
 
 
 # ── Helpers ─────────────────────────────────────────────────────────
@@ -62,7 +62,7 @@ class TestNormalBullMarket:
     def test_sp500_bull(self):
         price = 5500.0
         mas = _mas_from_price(price, {50: 0.05, 100: 0.05, 200: 0.05})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(60), 0.0, -0.05,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -73,7 +73,7 @@ class TestNormalBullMarket:
     def test_nasdaq_bull(self):
         price = 19000.0
         mas = _mas_from_price(price, {50: 0.05, 100: 0.05, 200: 0.05})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(60), 0.0, -0.08,
             NDX_WEIGHTS, NDX_FADE, NDX_DD_FULL,
         )
@@ -84,7 +84,7 @@ class TestNormalBullMarket:
     def test_gold_bull(self):
         price = 2400.0
         mas = _mas_from_price(price, {50: 0.05, 100: 0.05, 200: 0.05})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(60), 0.0, -0.03,
             GOLD_WEIGHTS, GOLD_FADE, GOLD_DD_FULL,
         )
@@ -102,7 +102,7 @@ class TestModerateCorrection:
     def test_sp500_correction(self):
         price = 4800.0
         mas = _mas_from_price(price, {50: -0.03, 100: 0.0, 200: -0.05})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(38), -0.10, -0.12,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -113,7 +113,7 @@ class TestModerateCorrection:
     def test_nasdaq_correction(self):
         price = 15000.0
         mas = _mas_from_price(price, {50: -0.05, 100: -0.02, 200: -0.08})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(38), -0.12, -0.15,
             NDX_WEIGHTS, NDX_FADE, NDX_DD_FULL,
         )
@@ -130,7 +130,7 @@ class TestMajorCrash:
     def test_nasdaq_crash(self):
         price = 12000.0
         mas = _mas_from_price(price, {50: -0.15, 100: -0.20, 200: -0.25})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(25), -0.33, -0.35,
             NDX_WEIGHTS, NDX_FADE, NDX_DD_FULL,
         )
@@ -141,7 +141,7 @@ class TestMajorCrash:
     def test_sp500_crash(self):
         price = 3500.0
         mas = _mas_from_price(price, {50: -0.10, 100: -0.15, 200: -0.20})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(22), -0.25, -0.30,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -159,7 +159,7 @@ class TestGoldParabolicRally:
     def test_gold_parabolic(self):
         price = 2800.0
         mas = _mas_from_price(price, {50: 0.08, 100: 0.12, 200: 0.20})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(70), 0.0, -0.05,
             GOLD_WEIGHTS, GOLD_FADE, GOLD_DD_FULL,
         )
@@ -178,7 +178,7 @@ class TestGoldMildPullback:
     def test_gold_pullback(self):
         price = 2300.0
         mas = _mas_from_price(price, {50: 0.02, 100: 0.0, 200: -0.05})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(42), -0.05, -0.08,
             GOLD_WEIGHTS, GOLD_FADE, GOLD_DD_FULL,
         )
@@ -197,7 +197,7 @@ class TestEdgeCases:
         """Even with extreme inputs, score is clamped to 10."""
         price = 1000.0
         mas = _mas_from_price(price, {50: -0.50, 100: -0.50, 200: -0.50})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(10), -0.50, -0.60,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -207,7 +207,7 @@ class TestEdgeCases:
         """All indicators neutral/negative → score stays at 0."""
         price = 6000.0
         mas = _mas_from_price(price, {50: 0.20, 100: 0.20, 200: 0.20})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(80), 0.0, 0.0,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -218,7 +218,7 @@ class TestEdgeCases:
         price = 5000.0
         # Exactly at 7% above MA50
         mas = _mas_from_price(price, {50: 0.07, 100: 0.0, 200: 0.0})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(50), 0.0, 0.0,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
@@ -231,7 +231,7 @@ class TestEdgeCases:
         """Drawdown beyond full_pct still gives max score, not more."""
         price = 3000.0
         mas = _mas_from_price(price, {50: 0.20, 100: 0.20, 200: 0.20})
-        bs = _compute_buy_score(
+        bs = compute_buy_score(
             price, mas, _make_rsi(50), -0.50, -0.60,
             SP_WEIGHTS, SP_FADE, SP_DD_FULL,
         )
