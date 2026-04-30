@@ -40,7 +40,7 @@ No logic — just dataclass definitions and their imports (`pandas`, `__future__
 
 - **Verify:** `src/models.py` imports cleanly, no circular deps ✅
 
-### Task 1.3: Extract `src/indicators.py`
+### Task 1.3: Extract `src/indicators.py` ✅
 
 Move pure math functions from `data.py`:
 - `_calc_rsi(series, period)` → make public as `calc_rsi`
@@ -51,7 +51,9 @@ Move pure math functions from `data.py`:
 
 All parameters passed in (no imports from config inside the functions). Import `BuyScore` from `src.models`.
 
-- **Verify:** functions work standalone with explicit params
+- **Verify:** functions work standalone with explicit params ✅
+
+> Note: Also created a minimal `src/allocation.py` with `score_to_multiplier` since `score_to_suggestion` imports it. Task 1.4 will flesh it out with `compute_allocation`.
 
 ### Task 1.4: Extract `src/allocation.py`
 
