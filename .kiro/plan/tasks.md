@@ -172,7 +172,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 > Note: pykrx depends on `pkg_resources` which was removed in setuptools 82+. Pinned `setuptools<81` to keep it working. pykrx emits a deprecation warning — harmless.
 
-### Task 2.2: Implement `src/fetchers/pykrx.py`
+### Task 2.2: Implement `src/fetchers/pykrx.py` ✅
 
 Create the module with:
 - `download_pykrx(symbol: str, period_days: int) -> pd.DataFrame`
@@ -184,7 +184,7 @@ Create the module with:
 - `get_live_price_pykrx(symbol: str) -> float`
   - Fetch today's data, return latest close
 
-- **Verify:** manual test with ticker "133690"
+- **Verify:** manual test with ticker "133690" ✅ (23 rows, correct columns, live price ₩177,990)
 
 ### Task 2.3: Register pykrx in dispatcher
 
