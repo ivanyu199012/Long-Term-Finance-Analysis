@@ -15,7 +15,7 @@ Reference: `.kiro/plan/korean_data_addition.md`
 
 ---
 
-## Phase 1: Project Restructure ⬜
+## Phase 1: Project Restructure ✅
 
 The restructure must happen first — it's easier to add new features into a clean structure.
 
@@ -133,7 +133,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 - **Verify:** `uv run python -m src.main` works ✅ (import check passed; full run requires network)
 
-### Task 1.11: Update `tests/` imports
+### Task 1.11: Update `tests/` imports ✅
 
 - All test files: change `from data import ...` → `from src.indicators import ...` etc.
 - `from backtest import ...` → `from src.backtest import ...`
@@ -142,9 +142,9 @@ This replaces the old `fetch_ticker()` from `data.py`.
 - `from backtest import _run_strategy` → `from src.backtest import _run_strategy` (stays private but importable for tests)
 - `from backtest import BacktestResult` → `from src.models import BacktestResult`
 
-- **Verify:** `uv run pytest` — all 26 tests pass
+- **Verify:** `uv run pytest` — all 26 tests pass ✅
 
-### Task 1.12: Update project files
+### Task 1.12: Update project files ✅
 
 - `pyproject.toml`: update `[project.scripts]` to `finanalysis = "src.main:main"`
 - `requirements.txt`: add `python-dotenv>=1.0`
@@ -152,7 +152,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 - `.gitignore`: add `.env` and `data/`
 - Delete old root-level `data.py`, `config.py`, `chart.py`, `backtest.py`, `main.py` (now in `src/`)
 
-- **Verify:** `uv run python -m src.main` works, `uv run pytest` passes
+- **Verify:** `uv run python -m src.main` works, `uv run pytest` passes ✅
 
 ---
 

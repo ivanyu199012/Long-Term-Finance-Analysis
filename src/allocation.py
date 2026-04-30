@@ -61,10 +61,10 @@ def compute_allocation(
 
     # Resolve defaults from config if not provided
     if ticker_configs is None:
-        from config import TICKERS
+        from src.config import TICKERS
         ticker_configs = TICKERS
     if monthly_budget is None:
-        from config import MONTHLY_BUDGET
+        from src.config import MONTHLY_BUDGET
         monthly_budget = MONTHLY_BUDGET
 
     # Step 1: raw weights = base_weight × multiplier

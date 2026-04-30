@@ -11,7 +11,7 @@ dependencies = [
 ]
 
 [project.scripts]
-finanalysis = "main:main"
+finanalysis = "src.main:main"
 
 [dependency-groups]
 dev = [
