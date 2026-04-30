@@ -254,7 +254,7 @@ Update `src/fetchers/__init__.py`:
 
 > Note: Fixed case-sensitivity bug in product name filter (`1Kg` vs `1kg`). Added early-exit after 30 consecutive empty days to avoid long waits when system date is ahead of API data.
 
-### Task 3.3: Add KRX Gold ticker to config
+### Task 3.3: Add KRX Gold ticker to config ✅
 
 Add to `TICKERS_KR` in `src/config.py`:
 ```python
@@ -262,10 +262,10 @@ Add to `TICKERS_KR` in `src/config.py`:
  "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
  "ma_fade_thresholds": {50: 0.05, 100: 0.08, 200: 0.12},
  "drawdown_full_pct": 0.20,
- "base_weight": ..., "min_weight": ...},
+ "base_weight": 0.30, "min_weight": 0.20},
 ```
 
-- **Verify:** dashboard fetches and scores KRX Gold correctly
+- **Verify:** dashboard fetches and scores KRX Gold correctly ✅ (Total: 6 tickers, KR: 3)
 
 ### Task 3.4: Create `.env` template
 

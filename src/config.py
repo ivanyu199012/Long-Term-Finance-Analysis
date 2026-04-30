@@ -85,6 +85,19 @@ TICKERS_INTL: list[dict] = [
 
 TICKERS_KR: list[dict] = [
     {
+        "symbol": "KRX_GOLD",
+        "label": "금현물 (KRX)",
+        "source": "krx_gold",
+        # Gold trades in tight ranges — all three MAs carry roughly equal
+        # importance.  Same weights as the international Gold (GC=F).
+        "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
+        "ma_fade_thresholds": {50: 0.05, 100: 0.08, 200: 0.12},
+        "drawdown_full_pct": 0.20,
+        # Hedge allocation within the KR portfolio.
+        "base_weight": 0.30,
+        "min_weight": 0.20,
+    },
+    {
         "symbol": "360750",
         "label": "TIGER S&P500",
         "source": "pykrx",
