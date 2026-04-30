@@ -59,7 +59,7 @@ def calc_drawdown(
         (current_drawdown, max_drawdown) as negative fractions
         (e.g. -0.15 means 15% below peak).
     """
-    peak = close.rolling(window=window).max()
+    peak = close.rolling(window=window, min_periods=1).max()
     drawdown = (close - peak) / peak
     current_dd = float(drawdown.iloc[-1])
     max_dd = float(drawdown.min())
@@ -232,7 +232,7 @@ def compute_score_series(
     rsi_score = rsi_score.where(rsi > 35, rsi_max_score)
 
     # Drawdown component: linear 0–drawdown_full_pct
-    peak = close.rolling(window=drawdown_window).max()
+    peak = close.rolling(window=drawdown_window, min_periods=1).max()
     dd = ((close - peak) / peak).abs()
     dd_score = (dd / drawdown_full_pct).clip(upper=1.0) * drawdown_max_score
 
