@@ -325,12 +325,27 @@ Confirm `min_weight` values don't sum to more than 1.0.
 
 - **Verify:** allocation math works, no negative remainders
 
-### Task 6.2: Update `.kiro/steering/` docs
+### Task 6.2: Restructure documentation
 
-Update all three steering files to reflect new structure:
-- `product.md` — mention Korean tickers, two-group layout
-- `tech.md` — add pykrx, python-dotenv to deps, update commands
-- `structure.md` — new `src/` layout, module responsibilities
+Replace the monolithic README with a focused entry point + detailed docs:
+
+**Create `docs/` directory:**
+- `docs/scoring.md` — score methodology, per-ticker MA weights/thresholds, suggestion tiers, multiplier table
+- `docs/backtest.md` — backtest modes (per-ticker + portfolio), strategies (flat/raw/normalized), how to interpret results
+- `docs/korean-data-sources.md` — KRX Gold API setup (auth key, rate limits, caching), pykrx usage, `.env` configuration
+- `docs/configuration.md` — all `config.py` options explained (tickers, weights, periods, budgets, chart styles)
+
+**Trim `README.md` to:**
+- Project one-liner + what it does
+- Quick start (install, run dashboard, run backtest)
+- Brief feature list
+- Project structure overview (just the `src/` tree)
+- Links to `docs/*.md` for detailed topics
+- Prerequisites + output section
+
+Move the scoring tables, backtest explanation, estimated data handling, and detailed config docs out of README into the appropriate `docs/` file.
+
+- **Verify:** README is under ~80 lines, all detailed info is findable in `docs/`
 
 ### Task 6.3: Final integration test
 
