@@ -267,12 +267,12 @@ Add to `TICKERS_KR` in `src/config.py`:
 
 - **Verify:** dashboard fetches and scores KRX Gold correctly ✅ (Total: 6 tickers, KR: 3)
 
-### Task 3.4: Create `.env` template
+### Task 3.4: Create `.env` template ✅
 
 - Create `.env.example` (committed) with `KRX_AUTH_KEY=your_key_here`
 - Create `.env` (git-ignored) with actual key for local use
 
-- **Verify:** `load_dotenv()` picks up the key
+- **Verify:** `load_dotenv()` picks up the key ✅
 
 ### Task 3.5: Write tests for KRX Gold fetcher
 
