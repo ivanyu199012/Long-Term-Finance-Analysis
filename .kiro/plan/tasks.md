@@ -106,14 +106,14 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 > Note: pykrx and krx_gold branches raise `NotImplementedError` — placeholders for Phase 2 & 3.
 
-### Task 1.8: Move `backtest.py` → `src/backtest.py`
+### Task 1.8: Move `backtest.py` → `src/backtest.py` ✅
 
 - Update imports: `_calc_rsi` → `src.indicators.calc_rsi`, `_compute_score_series` → `src.indicators.compute_score_series`, `score_to_multiplier` → `src.allocation.score_to_multiplier`
 - Dataclasses already in `src.models` — import from there
 - Keep `print_backtest` and `print_portfolio_backtest` here (terminal output)
 - Keep `run_backtest`, `run_portfolio_backtest`, `_run_strategy` here
 
-- **Verify:** backtest tests pass
+- **Verify:** backtest tests pass ✅
 
 ### Task 1.9: Move `chart.py` → `src/chart.py`
 
