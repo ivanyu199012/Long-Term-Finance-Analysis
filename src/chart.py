@@ -571,35 +571,49 @@ def _build_backtest_header(
     portfolio_comparisons: Sequence[PortfolioComparison] | None = None,
 ) -> str:
     """Build an HTML summary header for the backtest dashboard."""
-    cards: list[str] = []
-
+    # Group by period, then render row by row
+    by_period: dict[str, list[BacktestComparison]] = {}
     for comp in comparisons:
-        flat = comp.flat
-        norm = comp.score_normalized
-        diff = norm.total_return_pct - flat.total_return_pct
-        bg = "#388E3C" if diff > 0 else "#F44336" if diff < -1 else "#FF9800"
+        by_period.setdefault(comp.period, []).append(comp)
 
-        cards.append(
-            f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
-            f"padding:14px 20px;margin:4px 6px;min-width:260px'>"
-            f"<div style='font-size:16px;font-weight:700'>{comp.label} — {comp.period}</div>"
-            f"<div style='font-size:11px;line-height:1.8;margin-top:6px'>"
-            f"<b>Flat DCA:</b> {flat.total_return_pct:+.2f}% return, "
-            f"{flat.max_drawdown_pct:.1f}% max DD<br>"
-            f"<b>Score (norm):</b> {norm.total_return_pct:+.2f}% return, "
-            f"{norm.max_drawdown_pct:.1f}% max DD<br>"
-            f"<b>Edge:</b> {diff:+.2f}pp"
-            f"</div></div>"
+    rows_html: list[str] = []
+    for period in sorted(by_period.keys()):
+        cards: list[str] = []
+        for comp in by_period[period]:
+            flat = comp.flat
+            norm = comp.score_normalized
+            diff = norm.total_return_pct - flat.total_return_pct
+            bg = "#388E3C" if diff > 0 else "#F44336" if diff < -1 else "#FF9800"
+
+            cards.append(
+                f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
+                f"padding:14px 20px;margin:4px 6px;min-width:260px'>"
+                f"<div style='font-size:16px;font-weight:700'>{comp.label} — {comp.period}</div>"
+                f"<div style='font-size:11px;line-height:1.8;margin-top:6px'>"
+                f"<b>Flat DCA:</b> {flat.total_return_pct:+.2f}% return, "
+                f"{flat.max_drawdown_pct:.1f}% max DD<br>"
+                f"<b>Score (norm):</b> {norm.total_return_pct:+.2f}% return, "
+                f"{norm.max_drawdown_pct:.1f}% max DD<br>"
+                f"<b>Edge:</b> {diff:+.2f}pp"
+                f"</div></div>"
+            )
+
+        rows_html.append(
+            f"<div style='display:flex;justify-content:center;"
+            f"flex-wrap:wrap;margin:4px 8px'>"
+            f"{''.join(cards)}</div>"
         )
 
+    # Portfolio cards in a separate row
     if portfolio_comparisons:
-        for pc in portfolio_comparisons:
+        port_cards: list[str] = []
+        for pc in sorted(portfolio_comparisons, key=lambda x: x.period):
             flat_p = pc.flat
             score_p = pc.score_alloc
             diff_p = score_p.total_return_pct - flat_p.total_return_pct
             bg = "#1565C0" if diff_p > 0 else "#C62828"
 
-            cards.append(
+            port_cards.append(
                 f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
                 f"padding:14px 20px;margin:4px 6px;min-width:260px'>"
                 f"<div style='font-size:16px;font-weight:700'>Portfolio — {pc.period}</div>"
@@ -612,6 +626,12 @@ def _build_backtest_header(
                 f"</div></div>"
             )
 
+        rows_html.append(
+            f"<div style='display:flex;justify-content:center;"
+            f"flex-wrap:wrap;margin:4px 8px'>"
+            f"{''.join(port_cards)}</div>"
+        )
+
     title = (
         "<div style='text-align:center;font-size:22px;font-weight:700;"
         "margin:16px 0 8px;color:#333'>"
@@ -623,9 +643,4 @@ def _build_backtest_header(
         "This is a simulation — not financial advice.</div>"
     )
 
-    return (
-        f"{title}"
-        f"<div style='display:flex;justify-content:center;"
-        f"flex-wrap:wrap;margin:8px 8px 4px'>"
-        f"{''.join(cards)}</div>{disclaimer}"
-    )
+    return f"{title}{''.join(rows_html)}{disclaimer}"
