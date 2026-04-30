@@ -36,6 +36,7 @@ Move pure math functions from `data.py`:
 - `_calc_drawdown(close)` → make public as `calc_drawdown`
 - `_compute_buy_score(...)` → make public as `compute_buy_score`
 - `_compute_score_series(...)` → make public as `compute_score_series`
+- `_score_to_suggestion(score, base_amount)` → make public as `score_to_suggestion` (formats suggestion string; depends on `score_to_multiplier` from allocation, so import it)
 
 All parameters passed in (no imports from config inside the functions). Import `BuyScore` from `src.models`.
 
@@ -138,13 +139,14 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 ## Phase 2: Add Korean ETF Data Source (pykrx)
 
-### Task 2.1: Add `pykrx` dependency
+### Task 2.1: Add `pykrx` and `requests` dependencies
 
 - Add `pykrx>=1.0` to `pyproject.toml` `[project.dependencies]`
-- Add `pykrx>=1.0` to `requirements.txt`
+- Add `requests>=2.28` to `pyproject.toml` `[project.dependencies]` (explicit dep for KRX Gold fetcher — may already be transitive via yfinance but should be declared)
+- Add both to `requirements.txt`
 - Run `uv sync` to install
 
-- **Verify:** `from pykrx import stock` works
+- **Verify:** `from pykrx import stock` works, `import requests` works
 
 ### Task 2.2: Implement `src/fetchers/pykrx.py`
 
@@ -354,11 +356,13 @@ Move the scoring tables, backtest explanation, estimated data handling, and deta
 - Run `uv run pytest` — all tests pass
 - Verify HTML outputs render correctly in browser
 
-### Task 6.4: Clean up old root-level files
+### Task 6.4: Final verification of old file cleanup
 
-- Confirm no imports reference old paths
-- Remove old `data.py`, `config.py`, `chart.py`, `backtest.py`, `main.py` from root
-- Verify nothing breaks
+- Confirm Task 1.12's deletion of root-level files is complete (no stale `data.py`, `config.py`, `chart.py`, `backtest.py`, `main.py` at root)
+- Grep for any remaining imports referencing old paths (e.g. `from data import`, `from config import` without `src.` prefix)
+- Verify `uv run python -m src.main` and `uv run pytest` still pass
+
+- **Verify:** no orphan files, no broken imports
 
 ---
 

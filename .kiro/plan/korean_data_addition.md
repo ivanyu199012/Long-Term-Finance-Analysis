@@ -31,6 +31,7 @@ Add to `pyproject.toml` and `requirements.txt`:
 ```
 pykrx>=1.0
 python-dotenv>=1.0
+requests>=2.28
 ```
 
 ---
@@ -208,7 +209,7 @@ Portfolio backtest runs separately for each group (intl vs KR) since they have d
 
 1. **Restructure to `src/` package** — move existing files, update imports, verify tests pass
 2. **Split `data.py`** into `models.py`, `indicators.py`, `allocation.py`, `fetchers/` — verify tests pass
-3. **Add dependencies** — `pykrx`, `python-dotenv`
+3. **Add dependencies** — `pykrx`, `python-dotenv`, `requests`
 4. **Add `source` field** to existing tickers, implement dispatcher in `fetchers/__init__.py`
 5. **Implement `fetchers/pykrx.py`** — simplest new source, no rate limits
 6. **Add Korean ETF tickers** to config, verify dashboard works
@@ -217,7 +218,7 @@ Portfolio backtest runs separately for each group (intl vs KR) since they have d
 9. **Update dashboard layout** — two-group visual separation
 10. **Update backtest** — separate portfolio backtests per group
 11. **Adjust `base_weight`/`min_weight`** for KR tickers to sum to 1.0
-12. **Update steering docs** to reflect new structure
+12. **Restructure documentation** — create `docs/`, trim README
 
 ---
 
