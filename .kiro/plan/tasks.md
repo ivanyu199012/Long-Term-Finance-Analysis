@@ -225,7 +225,7 @@ Create `tests/test_fetchers_pykrx.py`:
 
 ## Phase 3: Add KRX Gold Data Source ⬜
 
-### Task 3.1: Implement `src/fetchers/krx_gold.py`
+### Task 3.1: Implement `src/fetchers/krx_gold.py` ✅
 
 Create the module with:
 - `download_krx_gold(auth_key: str) -> pd.DataFrame`
@@ -241,7 +241,7 @@ Create the module with:
 - `get_live_price_krx_gold(auth_key: str) -> float`
   - Fetch today's date, return close price
 
-- **Verify:** manual test with real API key (or mock)
+- **Verify:** manual test with real API key (or mock) ✅ (imports clean, tests pass)
 
 ### Task 3.2: Register krx_gold in dispatcher
 
