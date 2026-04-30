@@ -138,8 +138,13 @@ def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
 
 
 def _fetch_pykrx(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
-    """Fetch data via pykrx (Korean ETFs). Placeholder until Phase 2."""
-    raise NotImplementedError("pykrx fetcher not yet implemented (Phase 2)")
+    """Fetch data via pykrx (Korean ETFs)."""
+    from src.fetchers.pykrx import download_pykrx, get_live_price_pykrx
+
+    df = download_pykrx(symbol)
+    current_price = get_live_price_pykrx(symbol)
+    # pykrx only returns completed trading days — no estimated data needed
+    return df, current_price, []
 
 
 def _fetch_krx_gold(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:

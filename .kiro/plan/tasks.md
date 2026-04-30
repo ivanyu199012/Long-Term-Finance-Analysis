@@ -186,14 +186,14 @@ Create the module with:
 
 - **Verify:** manual test with ticker "133690" ✅ (23 rows, correct columns, live price ₩177,990)
 
-### Task 2.3: Register pykrx in dispatcher
+### Task 2.3: Register pykrx in dispatcher ✅
 
 Update `src/fetchers/__init__.py`:
 - Add `elif source == "pykrx":` branch
 - Call `download_pykrx(symbol, ...)`
 - Skip estimated-data logic (not needed for pykrx)
 
-- **Verify:** `fetch_ticker("133690", "TIGER 나스닥100", source="pykrx", ...)` returns valid `TickerData`
+- **Verify:** `fetch_ticker("133690", "TIGER 나스닥100", source="pykrx", ...)` returns valid `TickerData` ✅ (Price: ₩177,990, Score: 2.4)
 
 ### Task 2.4: Add Korean ETF tickers to config
 
