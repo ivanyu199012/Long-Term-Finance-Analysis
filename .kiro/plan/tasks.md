@@ -19,11 +19,11 @@ Reference: `.kiro/plan/korean_data_addition.md`
 
 The restructure must happen first — it's easier to add new features into a clean structure.
 
-### Task 1.1: Create `src/` package skeleton
+### Task 1.1: Create `src/` package skeleton ✅
 
 - Create `src/__init__.py` (empty or minimal)
 - Create `src/fetchers/__init__.py` (empty placeholder)
-- **Verify:** directories exist, Python can import `src`
+- **Verify:** directories exist, Python can import `src` ✅
 
 ### Task 1.2: Extract `src/models.py`
 
