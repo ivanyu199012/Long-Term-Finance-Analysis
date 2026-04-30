@@ -84,7 +84,28 @@ TICKERS_INTL: list[dict] = [
 ]
 
 TICKERS_KR: list[dict] = [
-    # Korean tickers will be added in Phase 2 & 3
+    {
+        "symbol": "360750",
+        "label": "TIGER S&P500",
+        "source": "pykrx",
+        # Tracks S&P 500 — same scoring logic as the international version.
+        "ma_weights": {50: 0.5, 100: 1.5, 200: 5.0},
+        "ma_fade_thresholds": {50: 0.07, 100: 0.10, 200: 0.15},
+        "drawdown_full_pct": 0.25,
+        "base_weight": 0.45,
+        "min_weight": 0.30,
+    },
+    {
+        "symbol": "133690",
+        "label": "TIGER 나스닥100",
+        "source": "pykrx",
+        # Tracks NASDAQ 100 — same scoring logic as the international version.
+        "ma_weights": {50: 1.0, 100: 2.0, 200: 4.0},
+        "ma_fade_thresholds": {50: 0.10, 100: 0.14, 200: 0.20},
+        "drawdown_full_pct": 0.35,
+        "base_weight": 0.25,
+        "min_weight": 0.10,
+    },
 ]
 
 TICKERS: list[dict] = TICKERS_INTL + TICKERS_KR

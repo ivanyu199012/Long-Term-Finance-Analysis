@@ -195,19 +195,21 @@ Update `src/fetchers/__init__.py`:
 
 - **Verify:** `fetch_ticker("133690", "TIGER 나스닥100", source="pykrx", ...)` returns valid `TickerData` ✅ (Price: ₩177,990, Score: 2.4)
 
-### Task 2.4: Add Korean ETF tickers to config
+### Task 2.4: Add Korean ETF tickers to config ✅
 
 Add to `TICKERS_KR` in `src/config.py`:
 ```python
 {"symbol": "360750", "label": "TIGER S&P500", "source": "pykrx", 
- "ma_weights": {...}, "ma_fade_thresholds": {...}, "drawdown_full_pct": 0.25,
- "base_weight": ..., "min_weight": ...},
+ "ma_weights": {50:0.5, 100:1.5, 200:5.0}, "ma_fade_thresholds": {50:0.07, 100:0.10, 200:0.15},
+ "drawdown_full_pct": 0.25, "base_weight": 0.45, "min_weight": 0.30},
 {"symbol": "133690", "label": "TIGER 나스닥100", "source": "pykrx",
- "ma_weights": {...}, "ma_fade_thresholds": {...}, "drawdown_full_pct": 0.35,
- "base_weight": ..., "min_weight": ...},
+ "ma_weights": {50:1.0, 100:2.0, 200:4.0}, "ma_fade_thresholds": {50:0.10, 100:0.14, 200:0.20},
+ "drawdown_full_pct": 0.35, "base_weight": 0.25, "min_weight": 0.10},
 ```
 
-- **Verify:** dashboard fetches and scores both ETFs correctly
+- **Verify:** dashboard fetches and scores both ETFs correctly ✅ (TIGER S&P500: 2.9, TIGER 나스닥100: 2.4)
+
+> Note: Allocation currently spans all 5 tickers (intl + KR). Will be split to KR-only in Task 4.3.
 
 ### Task 2.5: Write tests for pykrx fetcher
 
