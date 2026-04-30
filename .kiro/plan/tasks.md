@@ -158,7 +158,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 ---
 
-## Phase 2: Add Korean ETF Data Source (pykrx) ⬜
+## Phase 2: Add Korean ETF Data Source (pykrx) ✅
 
 ### Task 2.1: Add `pykrx` and `requests` dependencies ✅
 
@@ -211,7 +211,7 @@ Add to `TICKERS_KR` in `src/config.py`:
 
 > Note: Allocation currently spans all 5 tickers (intl + KR). Will be split to KR-only in Task 4.3.
 
-### Task 2.5: Write tests for pykrx fetcher
+### Task 2.5: Write tests for pykrx fetcher ✅
 
 Create `tests/test_fetchers_pykrx.py`:
 - Mock `stock.get_market_ohlcv_by_date` to return synthetic DataFrame
@@ -219,7 +219,7 @@ Create `tests/test_fetchers_pykrx.py`:
 - Verify DatetimeIndex
 - Verify output shape matches expected contract
 
-- **Verify:** `uv run pytest tests/test_fetchers_pykrx.py` passes
+- **Verify:** `uv run pytest tests/test_fetchers_pykrx.py` passes ✅ (7 tests)
 
 ---
 
