@@ -82,7 +82,7 @@ Import `Allocation` from `src.models`, config values from `src.config`.
 
 > Note: Added `python-dotenv>=1.0` to `pyproject.toml` and ran `uv sync` (pulled forward from Task 1.12 since it's required for the import). Root-level `config.py` is still in place for existing code — will be removed in Task 1.12.
 
-### Task 1.6: Move `fetchers/yfinance.py`
+### Task 1.6: Move `fetchers/yfinance.py` ✅
 
 Extract from `data.py`:
 - `_download(symbol)` → `download(symbol)`
@@ -91,7 +91,7 @@ Extract from `data.py`:
 
 These become public functions in `src/fetchers/yfinance.py`.
 
-- **Verify:** yfinance fetcher works in isolation
+- **Verify:** yfinance fetcher works in isolation ✅
 
 ### Task 1.7: Create `src/fetchers/__init__.py` dispatcher
 
