@@ -25,7 +25,7 @@ The restructure must happen first — it's easier to add new features into a cle
 - Create `src/fetchers/__init__.py` (empty placeholder)
 - **Verify:** directories exist, Python can import `src` ✅
 
-### Task 1.2: Extract `src/models.py`
+### Task 1.2: Extract `src/models.py` ✅
 
 Move all dataclasses from `data.py` and `backtest.py` into `src/models.py`:
 - `BuyScore`
@@ -38,7 +38,7 @@ Move all dataclasses from `data.py` and `backtest.py` into `src/models.py`:
 
 No logic — just dataclass definitions and their imports (`pandas`, `__future__.annotations`).
 
-- **Verify:** `src/models.py` imports cleanly, no circular deps
+- **Verify:** `src/models.py` imports cleanly, no circular deps ✅
 
 ### Task 1.3: Extract `src/indicators.py`
 
