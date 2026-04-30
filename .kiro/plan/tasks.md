@@ -93,7 +93,7 @@ These become public functions in `src/fetchers/yfinance.py`.
 
 - **Verify:** yfinance fetcher works in isolation ✅
 
-### Task 1.7: Create `src/fetchers/__init__.py` dispatcher
+### Task 1.7: Create `src/fetchers/__init__.py` dispatcher ✅
 
 Implement `fetch_ticker(symbol, label, source="yfinance", **kwargs) -> TickerData`:
 - Routes to `fetchers.yfinance` / `fetchers.pykrx` / `fetchers.krx_gold` based on `source`
@@ -102,7 +102,9 @@ Implement `fetch_ticker(symbol, label, source="yfinance", **kwargs) -> TickerDat
 
 This replaces the old `fetch_ticker()` from `data.py`.
 
-- **Verify:** dashboard mode works end-to-end with yfinance tickers
+- **Verify:** dashboard mode works end-to-end with yfinance tickers ✅
+
+> Note: pykrx and krx_gold branches raise `NotImplementedError` — placeholders for Phase 2 & 3.
 
 ### Task 1.8: Move `backtest.py` → `src/backtest.py`
 
