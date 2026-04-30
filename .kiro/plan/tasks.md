@@ -67,7 +67,7 @@ Import `Allocation` from `src.models`, config values from `src.config`.
 
 > Note: `compute_allocation` accepts optional `ticker_configs` and `monthly_budget` params for explicit injection, falling back to config imports when not provided. Config imports currently reference root-level `config.py` — will be updated to `src.config` in Task 1.5.
 
-### Task 1.5: Move `config.py` → `src/config.py`
+### Task 1.5: Move `config.py` → `src/config.py` ✅
 
 - Move file contents as-is
 - Add `import os` and `from dotenv import load_dotenv` + `load_dotenv()` call
@@ -78,7 +78,9 @@ Import `Allocation` from `src.models`, config values from `src.config`.
 - Split `TICKERS` into `TICKERS_INTL` and `TICKERS_KR` (KR is empty for now)
 - Keep `TICKERS = TICKERS_INTL + TICKERS_KR` for backward compat
 
-- **Verify:** existing code still works with the combined `TICKERS` list
+- **Verify:** existing code still works with the combined `TICKERS` list ✅
+
+> Note: Added `python-dotenv>=1.0` to `pyproject.toml` and ran `uv sync` (pulled forward from Task 1.12 since it's required for the import). Root-level `config.py` is still in place for existing code — will be removed in Task 1.12.
 
 ### Task 1.6: Move `fetchers/yfinance.py`
 
