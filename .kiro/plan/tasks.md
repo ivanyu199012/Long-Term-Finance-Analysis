@@ -115,13 +115,13 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 - **Verify:** backtest tests pass ✅
 
-### Task 1.9: Move `chart.py` → `src/chart.py`
+### Task 1.9: Move `chart.py` → `src/chart.py` ✅
 
 - Update imports: `TickerData`, `Allocation` → from `src.models`
 - `BacktestComparison`, `PortfolioComparison` → from `src.models`
 - Config imports → from `src.config`
 
-- **Verify:** no import errors
+- **Verify:** no import errors ✅
 
 ### Task 1.10: Move `main.py` → `src/main.py`
 
