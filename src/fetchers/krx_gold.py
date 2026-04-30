@@ -151,15 +151,25 @@ def _fetch_date_range(
 
     Respects rate limits with sleep between requests.
     Skips non-trading days (empty API responses).
+    Stops early if 30+ consecutive days return no data (likely past
+    the API's available range).
     """
     results: list[dict] = []
     current = start
+    consecutive_empty = 0
 
     while current.date() <= end.date():
         date_str = current.strftime("%Y%m%d")
         price = _fetch_single_day(auth_key, date_str)
         if price is not None:
             results.append({"Date": date_str, "Close": price})
+            consecutive_empty = 0
+        else:
+            consecutive_empty += 1
+            # If 30+ consecutive days have no data, we've likely passed
+            # the end of available data in the API
+            if consecutive_empty >= 30:
+                break
 
         current += timedelta(days=1)
         time.sleep(_RATE_LIMIT_SLEEP)
@@ -193,7 +203,7 @@ def _fetch_single_day(auth_key: str, date_str: str) -> float | None:
 
     for item in items:
         product_name = item.get("ISU_NM", "")
-        if _GOLD_PRODUCT_NAME in product_name:
+        if _GOLD_PRODUCT_NAME.lower() in product_name.lower():
             close_str = item.get("TDD_CLSPRC", "")
             if close_str:
                 try:

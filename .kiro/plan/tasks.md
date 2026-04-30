@@ -243,14 +243,16 @@ Create the module with:
 
 - **Verify:** manual test with real API key (or mock) ✅ (imports clean, tests pass)
 
-### Task 3.2: Register krx_gold in dispatcher
+### Task 3.2: Register krx_gold in dispatcher ✅
 
 Update `src/fetchers/__init__.py`:
 - Add `elif source == "krx_gold":` branch
 - Pass `KRX_AUTH_KEY` from config
 - Skip estimated-data logic
 
-- **Verify:** `fetch_ticker("KRX_GOLD", "금현물 (KRX)", source="krx_gold", ...)` returns valid `TickerData`
+- **Verify:** `fetch_ticker("KRX_GOLD", "금현물 (KRX)", source="krx_gold", ...)` returns valid `TickerData` ✅ (Price: ₩217,060, Score: 10.0, 267 rows, MA200 computed)
+
+> Note: Fixed case-sensitivity bug in product name filter (`1Kg` vs `1kg`). Added early-exit after 30 consecutive empty days to avoid long waits when system date is ahead of API data.
 
 ### Task 3.3: Add KRX Gold ticker to config
 

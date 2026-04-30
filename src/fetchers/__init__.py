@@ -148,5 +148,11 @@ def _fetch_pykrx(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
 
 
 def _fetch_krx_gold(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
-    """Fetch data via KRX Gold API. Placeholder until Phase 3."""
-    raise NotImplementedError("KRX Gold fetcher not yet implemented (Phase 3)")
+    """Fetch data via KRX Gold API with local caching."""
+    from src.config import KRX_AUTH_KEY
+    from src.fetchers.krx_gold import download_krx_gold, get_live_price_krx_gold
+
+    df = download_krx_gold(KRX_AUTH_KEY)
+    current_price = get_live_price_krx_gold(KRX_AUTH_KEY)
+    # KRX Gold only returns completed trading days — no estimated data needed
+    return df, current_price, []
