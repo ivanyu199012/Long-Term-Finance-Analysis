@@ -160,14 +160,17 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 ## Phase 2: Add Korean ETF Data Source (pykrx) ⬜
 
-### Task 2.1: Add `pykrx` and `requests` dependencies
+### Task 2.1: Add `pykrx` and `requests` dependencies ✅
 
 - Add `pykrx>=1.0` to `pyproject.toml` `[project.dependencies]`
 - Add `requests>=2.28` to `pyproject.toml` `[project.dependencies]` (explicit dep for KRX Gold fetcher — may already be transitive via yfinance but should be declared)
-- Add both to `requirements.txt`
+- Add `setuptools<81` (required by pykrx for `pkg_resources`)
+- Add all to `requirements.txt`
 - Run `uv sync` to install
 
-- **Verify:** `from pykrx import stock` works, `import requests` works
+- **Verify:** `from pykrx import stock` works, `import requests` works ✅
+
+> Note: pykrx depends on `pkg_resources` which was removed in setuptools 82+. Pinned `setuptools<81` to keep it working. pykrx emits a deprecation warning — harmless.
 
 ### Task 2.2: Implement `src/fetchers/pykrx.py`
 
