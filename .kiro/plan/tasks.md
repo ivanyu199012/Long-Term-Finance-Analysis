@@ -4,7 +4,18 @@ Reference: `.kiro/plan/korean_data_addition.md`
 
 ---
 
-## Phase 1: Project Restructure
+## Process
+
+1. Complete one task at a time, then stop and wait for user review
+2. If a gap or ambiguity is found during implementation, ask the user before proceeding
+3. Update this file as implementation progresses — mark tasks as ✅ done, note any deviations or discoveries
+4. Each task has a **Verify** step that must pass before marking complete
+
+**Status legend:** ⬜ Not started | 🔄 In progress | ✅ Done | ⏭️ Skipped
+
+---
+
+## Phase 1: Project Restructure ⬜
 
 The restructure must happen first — it's easier to add new features into a clean structure.
 
@@ -137,7 +148,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 ---
 
-## Phase 2: Add Korean ETF Data Source (pykrx)
+## Phase 2: Add Korean ETF Data Source (pykrx) ⬜
 
 ### Task 2.1: Add `pykrx` and `requests` dependencies
 
@@ -197,7 +208,7 @@ Create `tests/test_fetchers_pykrx.py`:
 
 ---
 
-## Phase 3: Add KRX Gold Data Source
+## Phase 3: Add KRX Gold Data Source ⬜
 
 ### Task 3.1: Implement `src/fetchers/krx_gold.py`
 
@@ -259,7 +270,7 @@ Create `tests/test_fetchers_krx_gold.py`:
 
 ---
 
-## Phase 4: Dashboard Layout Update
+## Phase 4: Dashboard Layout Update ⬜
 
 ### Task 4.1: Update `src/chart.py` — two-group layout
 
@@ -290,7 +301,7 @@ Modify `generate_chart()` to accept two ticker groups:
 
 ---
 
-## Phase 5: Backtest Update
+## Phase 5: Backtest Update ⬜
 
 ### Task 5.1: Separate backtest by group
 
@@ -314,7 +325,7 @@ Update `generate_backtest_chart()`:
 
 ---
 
-## Phase 6: Finalization
+## Phase 6: Finalization ⬜
 
 ### Task 6.1: Tune `base_weight` / `min_weight` for KR tickers
 
