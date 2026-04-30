@@ -123,7 +123,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 
 - **Verify:** no import errors ✅
 
-### Task 1.10: Move `main.py` → `src/main.py`
+### Task 1.10: Move `main.py` → `src/main.py` ✅
 
 - Update all imports to use `src.*` paths
 - Dashboard calls `fetch_ticker` from `src.fetchers`
@@ -131,7 +131,7 @@ This replaces the old `fetch_ticker()` from `data.py`.
 - Chart calls from `src.chart`
 - Backtest calls from `src.backtest`
 
-- **Verify:** `uv run python -m src.main` works
+- **Verify:** `uv run python -m src.main` works ✅ (import check passed; full run requires network)
 
 ### Task 1.11: Update `tests/` imports
 
