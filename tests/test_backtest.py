@@ -5,8 +5,8 @@ from __future__ import annotations
 import pandas as pd
 import pytest
 
-from backtest import BacktestResult, _run_strategy, run_backtest
-from data import score_to_multiplier
+from src.backtest import BacktestResult, _run_strategy, run_backtest
+from src.allocation import score_to_multiplier
 
 
 # ── Multiplier mapping tests ────────────────────────────────────────

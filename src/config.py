@@ -4,14 +4,26 @@ Centralises ticker definitions, moving-average windows, chart settings,
 and output paths so they can be changed in one place.
 """
 
+from __future__ import annotations
+
+import os
 from dataclasses import dataclass
+
+from dotenv import load_dotenv
+
+load_dotenv()
+
+# ── API keys ────────────────────────────────────────────────────────
+
+KRX_AUTH_KEY: str = os.environ.get("KRX_AUTH_KEY", "")
 
 # ── Ticker definitions ──────────────────────────────────────────────
 
-TICKERS: list[dict] = [
+TICKERS_INTL: list[dict] = [
     {
         "symbol": "^GSPC",
         "label": "S&P 500",
+        "source": "yfinance",
         # S&P is broad and stable — the long-term MA200 is the dominant
         # signal, so it gets the lion's share of weight (5.0).  Shorter MAs
         # add minor sensitivity but aren't as meaningful for a diversified index.
@@ -30,6 +42,7 @@ TICKERS: list[dict] = [
     {
         "symbol": "^NDX",
         "label": "NASDAQ 100",
+        "source": "yfinance",
         # NASDAQ swings harder on shorter timeframes due to tech concentration.
         # Weight is shifted toward MA50/MA100 (1.0/2.0) to capture these moves,
         # while MA200 is reduced (4.0) since NASDAQ can stay well below it
@@ -50,6 +63,7 @@ TICKERS: list[dict] = [
     {
         "symbol": "GC=F",
         "label": "Gold",
+        "source": "yfinance",
         # Gold trends slowly and all three MAs carry roughly equal importance.
         # Weight is spread more evenly (1.75/2.5/2.75) so no single MA
         # dominates — short-term dips below MA50 are just as relevant as
@@ -68,6 +82,49 @@ TICKERS: list[dict] = [
         "min_weight": 0.20,
     },
 ]
+
+TICKERS_KR: list[dict] = [
+    {
+        "symbol": "360750",
+        "label": "TIGER S&P500",
+        "source": "pykrx",
+        # Tracks S&P 500 — same scoring logic as the international version.
+        "ma_weights": {50: 0.5, 100: 1.5, 200: 5.0},
+        "ma_fade_thresholds": {50: 0.07, 100: 0.10, 200: 0.15},
+        "drawdown_full_pct": 0.25,
+        # Core holding — mirrors international S&P allocation.
+        "base_weight": 0.55,
+        "min_weight": 0.40,
+    },
+    {
+        "symbol": "133690",
+        "label": "TIGER 나스닥100",
+        "source": "pykrx",
+        # Tracks NASDAQ 100 — same scoring logic as the international version.
+        "ma_weights": {50: 1.0, 100: 2.0, 200: 4.0},
+        "ma_fade_thresholds": {50: 0.10, 100: 0.14, 200: 0.20},
+        "drawdown_full_pct": 0.35,
+        # Growth satellite — mirrors international NASDAQ allocation.
+        "base_weight": 0.15,
+        "min_weight": 0.05,
+    },
+    {
+        "symbol": "KRX_GOLD",
+        "label": "금현물 (KRX)",
+        "source": "krx_gold",
+        # Gold trades in tight ranges — all three MAs carry roughly equal
+        # importance.  Same weights as the international Gold (GC=F).
+        "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
+        "ma_fade_thresholds": {50: 0.05, 100: 0.08, 200: 0.12},
+        "drawdown_full_pct": 0.20,
+        # Hedge allocation — mirrors international Gold allocation.
+        "base_weight": 0.30,
+        "min_weight": 0.20,
+    },
+]
+
+TICKERS: list[dict] = TICKERS_INTL + TICKERS_KR
+"""Combined ticker list for backward compatibility."""
 
 # ── Technical-indicator settings ────────────────────────────────────
 
@@ -96,7 +153,7 @@ TAIL_DAYS: int = 100
 """Number of recent trading days shown on the chart."""
 
 DOWNLOAD_PERIOD: str = "3y"
-"""yfinance download period string (e.g. '1y', '6mo', '2y')."""
+"""yfinance download period string (e.g. '1y', '6mo', '2y').  Applies to yfinance source only."""
 
 # ── Chart appearance ────────────────────────────────────────────────
 

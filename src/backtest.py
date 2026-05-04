@@ -6,39 +6,17 @@ Pure calculation — no I/O or network calls.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import pandas as pd
 
-from config import BASE_AMOUNT
-from data import _calc_rsi, _compute_score_series, score_to_multiplier
-
-
-# ── Result containers ───────────────────────────────────────────────
-
-
-@dataclass
-class BacktestResult:
-    """Results for a single strategy run."""
-
-    total_invested: float
-    final_value: float
-    total_return_pct: float
-    max_drawdown_pct: float
-    n_months: int
-    equity_curve: pd.Series | None = None
-    monthly_investments: pd.Series | None = None
-
-
-@dataclass
-class BacktestComparison:
-    """Side-by-side comparison of flat DCA vs score-based DCA."""
-
-    label: str
-    period: str
-    flat: BacktestResult
-    score_raw: BacktestResult
-    score_normalized: BacktestResult
+from src.allocation import score_to_multiplier
+from src.config import BASE_AMOUNT
+from src.indicators import calc_rsi, compute_score_series
+from src.models import (
+    BacktestComparison,
+    BacktestResult,
+    PortfolioBacktestResult,
+    PortfolioComparison,
+)
 
 
 # ── Core backtest logic ─────────────────────────────────────────────
@@ -70,8 +48,8 @@ def run_backtest(
     BacktestComparison
         Contains flat, raw score-based, and normalized score-based results.
     """
-    rsi = _calc_rsi(close)
-    scores = _compute_score_series(close, rsi, ma_weights, ma_fade_thresholds, drawdown_full_pct)
+    rsi = calc_rsi(close)
+    scores = compute_score_series(close, rsi, ma_weights, ma_fade_thresholds, drawdown_full_pct)
 
     # Resample to monthly — last trading day of each month
     monthly_close = close.resample("ME").last().dropna()
@@ -198,29 +176,8 @@ def print_backtest(result: BacktestComparison) -> None:
 
     print()
 
+
 # ── Portfolio-level backtest ────────────────────────────────────────
-
-
-@dataclass
-class PortfolioBacktestResult:
-    """Results for a portfolio-level backtest."""
-
-    total_invested: float
-    final_value: float
-    total_return_pct: float
-    max_drawdown_pct: float
-    n_months: int
-    per_asset: dict[str, BacktestResult]
-    equity_curve: pd.Series | None = None
-
-
-@dataclass
-class PortfolioComparison:
-    """Side-by-side comparison of flat allocation vs score-based allocation."""
-
-    period: str
-    flat: PortfolioBacktestResult
-    score_alloc: PortfolioBacktestResult
 
 
 def run_portfolio_backtest(
@@ -238,14 +195,14 @@ def run_portfolio_backtest(
     period:
         Period label (e.g. "5y", "10y") for trimming.
     """
-    from config import MONTHLY_BUDGET
+    from src.config import MONTHLY_BUDGET
 
     # Compute monthly scores for each asset
     asset_monthly: list[dict] = []
     for ad in asset_data:
         close = ad["close"]
-        rsi = _calc_rsi(close)
-        scores = _compute_score_series(
+        rsi = calc_rsi(close)
+        scores = compute_score_series(
             close, rsi, ad["ma_weights"],
             ad["ma_fade_thresholds"], ad["drawdown_full_pct"],
         )
@@ -297,7 +254,6 @@ def run_portfolio_backtest(
             flat_units[am["label"]] += amount / price
             flat_invested += amount
 
-        # Portfolio value = sum of all asset values
         pv = sum(
             flat_units[am["label"]] * float(am["monthly_close"].iloc[i])
             for am in asset_monthly
@@ -310,14 +266,12 @@ def run_portfolio_backtest(
     score_pv_list: list[float] = []
 
     for i, date in enumerate(common_dates):
-        # Compute raw weights = base_weight × multiplier
         raw_weights: dict[str, float] = {}
         for am in asset_monthly:
             s = float(am["monthly_scores"].iloc[i])
             mult = score_to_multiplier(s)
             raw_weights[am["label"]] = am["base_weight"] * mult
 
-        # Normalize to 100%
         total_raw = sum(raw_weights.values())
         weights = {k: v / total_raw for k, v in raw_weights.items()}
 
