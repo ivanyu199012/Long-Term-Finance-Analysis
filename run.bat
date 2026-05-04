@@ -1,4 +1,4 @@
 @echo off
 echo Running FinAnalysis...
-uv run main.py
+uv run python -m src.main
 pause

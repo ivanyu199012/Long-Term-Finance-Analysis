@@ -1,147 +1,75 @@
 # FinAnalysis
 
-Interactive technical-analysis dashboard for S&P 500, NASDAQ 100, and Gold. Downloads daily data, computes moving averages, RSI, and drawdown, generates a buy-in score, and outputs a self-contained HTML chart you can open in any browser.
+Technical-analysis dashboard and DCA scoring system for S&P 500, NASDAQ 100, Gold (international + Korean markets). Generates buy-in scores, portfolio allocation recommendations, and backtest comparisons — all in a self-contained HTML dashboard.
 
 ## Features
 
-- **Interactive Plotly charts** — zoom, pan, hover for exact values
-- **Moving averages** — MA50 / MA100 / MA200 with % distance from current price
-- **RSI oscillator** — Wilder's EWM smoothing with overbought/oversold shading
-- **Drawdown tracking** — current and max drawdown from peak
-- **Buy-in score (0–10)** — rules-based heuristic from MA positioning + RSI + drawdown
-- **Historical score chart** — score plotted over the last 100 days with suggestion threshold lines
-- **Per-product MA weights** — each ticker can have its own MA weight configuration
-- **Score breakdown** — see exactly how many points each indicator contributes
-- **Backtest** — compare flat DCA vs score-based DCA over 5y and 10y periods
-- **Single HTML output** — no server needed, just open the file
+- Interactive Plotly charts with MA, RSI, and score panels
+- Buy-in score (0–10) from MA positioning + RSI + drawdown
+- Portfolio allocation with dynamic score-based weighting
+- Tabbed dashboard: Korea 🇰🇷 (investment) + International 🌐 (reference)
+- Backtest: flat DCA vs score-based DCA over 5y and 10y
+- Multiple data sources: yfinance, pykrx (Korean ETFs), KRX Gold API
 
-## Score methodology
+## Quick Start
 
-MA weights are configured per ticker:
+```bash
+# Install dependencies
+uv sync
 
-**S&P 500** (MA total: 7.0, DD full at 25%)
+# Create .env with your KRX API key (see .env.example)
+cp .env.example .env
 
-| Component | Max pts | Logic |
-|-----------|---------|-------|
-| MA200     | 5.0     | Full weight below MA, linear fade 0–15% above, 0 beyond |
-| MA100     | 1.5     | Full weight below MA, linear fade 0–10% above, 0 beyond |
-| MA50      | 0.5     | Full weight below MA, linear fade 0–7% above, 0 beyond |
+# Dashboard mode
+uv run python -m src.main
 
-**NASDAQ 100** (MA total: 7.0, DD full at 35%)
+# Backtest mode
+uv run python -m src.main --backtest
 
-| Component | Max pts | Logic |
-|-----------|---------|-------|
-| MA200     | 4.0     | Full weight below MA, linear fade 0–20% above, 0 beyond |
-| MA100     | 2.0     | Full weight below MA, linear fade 0–14% above, 0 beyond |
-| MA50      | 1.0     | Full weight below MA, linear fade 0–10% above, 0 beyond |
+# Run tests
+uv run pytest
+```
 
-**Gold** (MA total: 7.0, DD full at 20%)
-
-| Component | Max pts | Logic |
-|-----------|---------|-------|
-| MA200     | 2.75    | Full weight below MA, linear fade 0–12% above, 0 beyond |
-| MA100     | 2.5     | Full weight below MA, linear fade 0–8% above, 0 beyond |
-| MA50      | 1.75    | Full weight below MA, linear fade 0–5% above, 0 beyond |
-
-**Shared components**
-
-| Component | Max pts | Logic |
-|-----------|---------|-------|
-| RSI       | 1.5     | Step: full at RSI ≤ 35, half at RSI ≤ 45, 0 above 45 |
-| Drawdown  | 1.5     | Linear: 0 pts at 0% DD, full at per-ticker threshold (S&P: 25%, NASDAQ: 35%, Gold: 20%) |
-
-**Total possible: 10 pts** (clamped to 0–10)
-
-### Suggestion thresholds
-
-| Score   | Suggestion        | Multiplier | Amount (₩)  |
-|---------|-------------------|------------|-------------|
-| ≥ 8.5   | Aggressive buy-in | 2.25x      | 1,125,000   |
-| ≥ 6.5   | Increase buy-in   | 1.50x      | 750,000     |
-| ≥ 4.5   | Regular buy-in    | 1.00x      | 500,000     |
-| ≥ 2.5   | Reduce buy-in     | 0.50x      | 250,000     |
-| < 2.5   | Minimum buy-in    | 0.25x      | 125,000     |
-
-> ⚠ This is a technical indicator score only — not financial advice.
-
-> ⚠ **Downside double-counting:** The MA and drawdown components are highly correlated — when price drops below MAs, drawdown also increases. This means the system intentionally becomes more aggressive during downturns, which concentrates buying into falling markets. This is by design for a DCA timing tool, but be aware it may increase risk during prolonged bear markets.
-
-## Estimated data handling
-
-When yfinance returns incomplete rows (e.g. today's data before market close), the missing `Close`/`Open`/`High`/`Low` values are filled with the mean of the previous day's close and the current live price. This keeps MA and drawdown calculations valid without dropping the row entirely.
-
-- **Terminal**: a yellow warning line is printed at the end of the ticker section listing which dates were estimated.
-- **Dashboard**: a red warning line appears below the disclaimer listing all estimated dates per ticker.
+On Windows: double-click `run.bat`.
 
 ## Prerequisites
 
 - Python 3.10+
 - [uv](https://docs.astral.sh/uv/getting-started/installation/) (recommended) or pip
+- KRX API key (for Korean gold data) — get at https://data.krx.co.kr/
 
-## Quick start
-
-```bash
-# Dashboard mode (default) — using uv
-uv run main.py
-
-# Backtest mode — compare flat DCA vs score-based DCA (5y and 10y)
-uv run main.py --backtest
-
-# Or using pip
-pip install -r requirements.txt
-python main.py
-python main.py --backtest
-```
-
-On Windows you can also double-click `run.bat`.
-
-## Project structure
+## Project Structure
 
 ```
-config.py     — Ticker list, per-product MA weights, RSI/DD settings, chart styles
-data.py       — Data fetching (yfinance) and indicator/score calculations
-chart.py      — Plotly chart rendering and HTML output (price, RSI, score panels)
-backtest.py   — Backtest engine: flat DCA vs score-based DCA comparison
-main.py       — Entry point (dashboard or --backtest mode)
-tests/        — Scenario-based scoring tests and backtest tests
+src/
+├── main.py          — Entry point (dashboard + backtest)
+├── config.py        — All configuration and ticker definitions
+├── models.py        — Dataclasses (BuyScore, TickerData, etc.)
+├── indicators.py    — Pure math (RSI, drawdown, score computation)
+├── allocation.py    — Score-to-multiplier mapping, portfolio allocation
+├── chart.py         — Plotly rendering and HTML output
+├── backtest.py      — Backtest engine
+└── fetchers/
+    ├── __init__.py  — Dispatcher (routes by source)
+    ├── yfinance.py  — Yahoo Finance fetcher
+    ├── pykrx.py     — Korean ETF fetcher
+    └── krx_gold.py  — KRX Gold API + CSV caching
+tests/               — Scenario-based scoring + backtest + fetcher tests
+docs/                — Detailed documentation
+data/                — Local CSV cache (KRX Gold)
+out/                 — Generated HTML output
 ```
 
-## Configuration
+## Documentation
 
-Edit `config.py` to:
-
-- Add/remove tickers in the `TICKERS` list (each with its own `ma_weights`, `ma_fade_thresholds`, and `drawdown_full_pct`)
-- Change moving-average windows (`MA_WINDOWS`)
-- Adjust RSI period and max score (`RSI_PERIOD`, `RSI_MAX_SCORE`)
-- Adjust drawdown max score (`DRAWDOWN_MAX_SCORE`)
-- Change the drawdown rolling window (`DRAWDOWN_WINDOW`)
-- Change the base monthly investment amount (`BASE_AMOUNT`)
-- Change the download period (`DOWNLOAD_PERIOD`)
-- Change the number of days shown (`TAIL_DAYS`)
-- Modify chart colours and styles (`MA_STYLES`)
+- [Scoring methodology](docs/scoring.md) — how the buy-in score works
+- [Backtest](docs/backtest.md) — strategies, metrics, and interpretation
+- [Korean data sources](docs/korean-data-sources.md) — pykrx + KRX Gold API setup
+- [Configuration](docs/configuration.md) — all settings explained
 
 ## Output
 
-`out/combined_chart.html` — opens automatically on Windows after generation.
+- `out/combined_chart.html` — tabbed dashboard (opens automatically on Windows)
+- `out/backtest_chart.html` — backtest comparison table
 
-## Testing
-
-```bash
-uv run pytest
-```
-
-Runs scenario-based tests that verify the scoring logic against real-world market conditions (bull market, correction, crash, rally, pullback) for all three assets, plus backtest simulation tests. No network calls — all inputs are synthetic.
-
-## Backtest
-
-```bash
-uv run main.py --backtest
-```
-
-Compares two DCA strategies over 5-year and 10-year periods for each ticker:
-
-- **Flat DCA** — invest a fixed `BASE_AMOUNT` every month
-- **Score-based DCA (raw)** — invest `BASE_AMOUNT × multiplier` based on the monthly score. Total invested differs from flat.
-- **Score-based DCA (normalized)** — same as raw but scaled so total invested matches flat DCA. Apples-to-apples return comparison.
-
-Metrics reported: total invested, portfolio value, total return %, and max drawdown %.
+> ⚠ Technical indicator scores only — not financial advice.
