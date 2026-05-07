@@ -234,7 +234,7 @@ def _build_score_header(
             f"</div>"
             f"<div style='font-size:12px;line-height:1.7;"
             f"border-left:1px solid rgba(255,255,255,0.3);padding-left:20px'>"
-            f"Price: {td.current_price:,.2f}<br>"
+            f"{_build_price_line(td)}"
             f"<b>MA score: {bs.ma_score:.1f}/{ma_max:.1f}</b><br>"
             f"{ma_detail}"
             f"<b>RSI score: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}</b> "
@@ -476,6 +476,25 @@ def _add_score_traces(
     )
 
     fig.update_yaxes(title_text="Score", range=[0, 10], row=row, col=col)
+
+
+def _build_price_line(td: TickerData) -> str:
+    """Build the price display line for a score card."""
+    if td.is_live_price and td.close_price is not None:
+        live_label = f"Live ({td.live_price_time})" if td.live_price_time else "Live"
+        close_label = f"Close ({td.close_price_date})" if td.close_price_date else "Close"
+        return (
+            f"<b style='color:#90EE90'>{live_label}: {td.current_price:,.2f}</b><br>"
+            f"{close_label}: {td.close_price:,.2f}<br>"
+        )
+    elif td.live_price_warning:
+        close_label = f"Close ({td.close_price_date})" if td.close_price_date else "Price"
+        return (
+            f"{close_label}: {td.current_price:,.2f}<br>"
+            f"<span style='color:#ffcdd2;font-size:10px'>⚠ {td.live_price_warning}</span><br>"
+        )
+    else:
+        return f"Price: {td.current_price:,.2f}<br>"
 
 
 def _score_color(score: float) -> str:

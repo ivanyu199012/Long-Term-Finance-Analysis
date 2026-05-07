@@ -52,6 +52,11 @@ class TickerData:
     estimated_dates: list[str] = None  # type: ignore[assignment]
     score_tail: pd.Series = None  # type: ignore[assignment]
     buy_score: BuyScore = None  # type: ignore[assignment]
+    close_price: float | None = None
+    is_live_price: bool = False
+    live_price_warning: str | None = None
+    live_price_time: str | None = None
+    close_price_date: str | None = None
 
 
 # ── Allocation ──────────────────────────────────────────────────────

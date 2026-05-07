@@ -61,7 +61,18 @@ def _run_dashboard() -> None:
             rsi_val = float(td.rsi.iloc[-1])
             ma_max = sum(td.ma_weights.values())
             print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {td.drawdown_full_pct:.0%})")
-            print(f"  Price:  {td.current_price:>12,.2f}")
+
+            # Price display: show live/close for Korean tickers
+            if td.is_live_price and td.close_price is not None:
+                live_label = f"({td.live_price_time})" if td.live_price_time else "(live)"
+                close_label = f"({td.close_price_date})" if td.close_price_date else ""
+                print(f"  Price:  {td.current_price:>12,.2f} {live_label} | Close {close_label}: {td.close_price:,.2f}")
+            elif td.live_price_warning:
+                print(f"  Price:  {td.current_price:>12,.2f}")
+                print(f"  \033[33m⚠ {td.live_price_warning}\033[0m")
+            else:
+                print(f"  Price:  {td.current_price:>12,.2f}")
+
             for w, ma in td.moving_averages.items():
                 pct = td.ma_pct_diffs[w]
                 above_below = "above" if pct > 0 else "below"
