@@ -390,8 +390,10 @@ def _add_rsi_traces(
     if td.is_live_price and td.live_price_time:
         marker_date = pd.Timestamp.now().normalize()
         if marker_date not in rsi.index:
+            # RSI should already include today if live price was appended to DataFrame
+            # but if not, carry forward last value
             x_data.append(marker_date)
-            y_data.append(float(rsi.iloc[-1]))  # carry forward last RSI
+            y_data.append(float(rsi.iloc[-1]))
 
     fig.add_trace(
         go.Scatter(

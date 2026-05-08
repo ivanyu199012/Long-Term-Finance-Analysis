@@ -75,6 +75,17 @@ def fetch_ticker(
     if source in ("pykrx", "krx_gold") and not is_live:
         live_price_warning = f"Live price unavailable for {label} — using last close"
 
+    # ── Append live price as today's row for indicator calculation ──
+    # This allows RSI and score to reflect the current price
+    if is_live and current_price:
+        today = pd.Timestamp.now().normalize()
+        if today not in df.index:
+            live_row = pd.DataFrame(
+                {"Close": [current_price]},
+                index=pd.DatetimeIndex([today], name=df.index.name),
+            )
+            df = pd.concat([df, live_row])
+
     # ── Compute indicators ──
     moving_averages: dict[int, float] = {}
     ma_pct_diffs: dict[int, float] = {}
