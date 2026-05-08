@@ -379,13 +379,24 @@ def _add_rsi_traces(
     fig: go.Figure, td: TickerData, row: int, col: int,
 ) -> None:
     """Add RSI line with overbought / oversold bands."""
+    import pandas as pd
+
     rsi = td.rsi_tail
     show_legend = col == 1
 
+    # Extend RSI line to today if live price is available
+    x_data = rsi.index.tolist()
+    y_data = rsi.tolist()
+    if td.is_live_price and td.live_price_time:
+        marker_date = pd.Timestamp.now().normalize()
+        if marker_date not in rsi.index:
+            x_data.append(marker_date)
+            y_data.append(float(rsi.iloc[-1]))  # carry forward last RSI
+
     fig.add_trace(
         go.Scatter(
-            x=rsi.index,
-            y=rsi,
+            x=x_data,
+            y=y_data,
             mode="lines",
             name="RSI",
             line=dict(color="purple", width=1.2),
@@ -414,11 +425,15 @@ def _add_rsi_traces(
             col=col,
         )
 
-    last_date = rsi.index[-1]
+    # RSI marker at today if live, otherwise at last data point
+    if td.is_live_price and td.live_price_time:
+        rsi_marker_date = pd.Timestamp.now().normalize()
+    else:
+        rsi_marker_date = rsi.index[-1]
     last_rsi = float(rsi.iloc[-1])
     fig.add_trace(
         go.Scatter(
-            x=[last_date],
+            x=[rsi_marker_date],
             y=[last_rsi],
             mode="markers+text",
             name=f"RSI: {last_rsi:.1f}",
@@ -440,13 +455,24 @@ def _add_score_traces(
     fig: go.Figure, td: TickerData, row: int, col: int,
 ) -> None:
     """Add historical buy-in score line with suggestion threshold bands."""
+    import pandas as pd
+
     score = td.score_tail
     show_legend = col == 1
 
+    # Extend score line to today if live price is available
+    x_data = score.index.tolist()
+    y_data = score.tolist()
+    if td.is_live_price and td.live_price_time and td.buy_score:
+        marker_date = pd.Timestamp.now().normalize()
+        if marker_date not in score.index:
+            x_data.append(marker_date)
+            y_data.append(td.buy_score.score)  # use the live-computed score
+
     fig.add_trace(
         go.Scatter(
-            x=score.index,
-            y=score,
+            x=x_data,
+            y=y_data,
             mode="lines",
             name="Score",
             line=dict(color="darkorange", width=1.5),
@@ -475,11 +501,16 @@ def _add_score_traces(
             col=col,
         )
 
-    last_date = score.index[-1]
-    last_score = float(score.iloc[-1])
+    # Score marker at today if live, otherwise at last data point
+    if td.is_live_price and td.live_price_time and td.buy_score:
+        score_marker_date = pd.Timestamp.now().normalize()
+        last_score = td.buy_score.score
+    else:
+        score_marker_date = score.index[-1]
+        last_score = float(score.iloc[-1])
     fig.add_trace(
         go.Scatter(
-            x=[last_date],
+            x=[score_marker_date],
             y=[last_score],
             mode="markers+text",
             name=f"Score: {last_score:.1f}",
