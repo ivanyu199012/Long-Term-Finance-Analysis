@@ -223,17 +223,17 @@ def _build_score_header(
 
         cards.append(
             f"<div style='flex:1;background:{bg};color:#fff;border-radius:10px;"
-            f"padding:18px 24px;margin:0 8px;min-width:300px;"
-            f"display:grid;grid-template-columns:auto 1fr;gap:0 24px;"
-            f"align-items:center'>"
-            f"<div style='text-align:center'>"
+            f"padding:18px 24px;margin:0 8px;min-width:300px'>"
+            # Score section (top)
+            f"<div style='text-align:center;margin-bottom:12px'>"
             f"<div style='font-size:20px;font-weight:700'>{td.label}</div>"
             f"<div style='font-size:42px;font-weight:800;line-height:1.1'>"
             f"{bs.score:.1f}<span style='font-size:18px'>/10</span></div>"
             f"<div style='font-size:14px'>{bs.suggestion}</div>"
             f"</div>"
-            f"<div style='font-size:12px;line-height:1.7;"
-            f"border-left:1px solid rgba(255,255,255,0.3);padding-left:20px'>"
+            # Data section (below)
+            f"<div style='font-size:14px;line-height:1.7;"
+            f"background:rgba(0,0,0,0.25);border-radius:6px;padding:10px 14px'>"
             f"{_build_price_line(td)}"
             f"<b>MA score: {bs.ma_score:.1f}/{ma_max:.1f}</b><br>"
             f"{ma_detail}"
@@ -303,12 +303,23 @@ def _add_price_traces(
     fig: go.Figure, td: TickerData, row: int, col: int,
 ) -> None:
     """Add closing-price line and horizontal MA reference lines."""
+    import pandas as pd
+
     show_legend = col == 1
+
+    # Extend the price line to include the live price point
+    x_data = td.tail.index.tolist()
+    y_data = td.tail["Close"].tolist()
+    if td.is_live_price and td.live_price_time:
+        marker_date = pd.Timestamp.now().normalize()
+        if marker_date not in td.tail.index:
+            x_data.append(marker_date)
+            y_data.append(td.current_price)
 
     fig.add_trace(
         go.Scatter(
-            x=td.tail.index,
-            y=td.tail["Close"],
+            x=x_data,
+            y=y_data,
             mode="lines",
             name="Close",
             line=dict(color="black", width=1.5),
@@ -335,10 +346,18 @@ def _add_price_traces(
             col=col,
         )
 
-    last_date = td.tail.index[-1]
+    # Place the latest price marker at today's date if live, otherwise at last data point
+    if td.is_live_price and td.live_price_time:
+        from datetime import datetime
+        # Use today's date for the marker position
+        import pandas as pd
+        marker_date = pd.Timestamp.now().normalize()
+    else:
+        marker_date = td.tail.index[-1]
+
     fig.add_trace(
         go.Scatter(
-            x=[last_date],
+            x=[marker_date],
             y=[td.current_price],
             mode="markers+text",
             name=f"Latest: {td.current_price:,.2f}",
@@ -484,7 +503,7 @@ def _build_price_line(td: TickerData) -> str:
         live_label = f"Live ({td.live_price_time})" if td.live_price_time else "Live"
         close_label = f"Close ({td.close_price_date})" if td.close_price_date else "Close"
         return (
-            f"<b style='color:#90EE90'>{live_label}: {td.current_price:,.2f}</b><br>"
+            f"<b style='color:#FFEB3B'>{live_label}: {td.current_price:,.2f}</b><br>"
             f"{close_label}: {td.close_price:,.2f}<br>"
         )
     elif td.live_price_warning:

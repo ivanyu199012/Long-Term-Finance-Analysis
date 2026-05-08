@@ -107,16 +107,30 @@ def _parse_datetime(iso_str: str) -> str:
     Handles formats like:
     - "2026-05-07T14:36:31.862301+09:00"
     - "2026-05-07T14:21:56"
+    - "2026-05-07T00:12:37-05:00"
     """
     if not iso_str:
         return ""
     try:
-        # Take just the date and time parts (ignore timezone/microseconds)
-        dt_part = iso_str[:16]  # "2026-05-07T14:36"
-        date_part, time_part = dt_part.split("T")
-        month = date_part[5:7]
-        day = date_part[8:10]
-        return f"{month}/{day} {time_part}"
+        from datetime import datetime, timezone
+
+        # Parse the ISO string
+        # Remove microseconds for simpler parsing
+        clean = iso_str.split(".")[0]
+        # Handle timezone offset
+        if "+" in clean[10:] or clean.count("-") > 2:
+            # Has timezone — parse with fromisoformat
+            dt = datetime.fromisoformat(iso_str)
+            # Convert to local time for display
+            dt_local = dt.astimezone()
+            return dt_local.strftime("%m/%d %H:%M")
+        else:
+            # No timezone — use as-is
+            dt_part = clean[:16]  # "2026-05-07T14:36"
+            date_part, time_part = dt_part.split("T")
+            month = date_part[5:7]
+            day = date_part[8:10]
+            return f"{month}/{day} {time_part}"
     except (ValueError, IndexError):
         return ""
 

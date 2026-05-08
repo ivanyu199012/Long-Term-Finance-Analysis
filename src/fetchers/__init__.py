@@ -139,8 +139,6 @@ def fetch_ticker(
 
 def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     """Fetch data via yfinance with estimated-data handling."""
-    from datetime import datetime
-
     import yfinance as yf
 
     from src.fetchers.yfinance import download, fill_estimated_data, get_live_price
@@ -153,10 +151,10 @@ def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     try:
         prev_close = float(yf.Ticker(symbol).fast_info.previous_close)
     except Exception:
-        prev_close = float(df["Close"].dropna().iloc[-2]) if len(df) > 1 else live_price
+        prev_close = float(df["Close"].dropna().iloc[-1])
 
-    # Close date: second-to-last trading day
-    close_date = df.index[-2].strftime("%m/%d") if len(df) > 1 else df.index[-1].strftime("%m/%d")
+    # Close date: last row in the DataFrame (yesterday's completed session)
+    close_date = df.index[-1].strftime("%m/%d") if not df.empty else None
 
     # For gold (GC=F), try Naver's international gold API for a more reliable live price
     if symbol == "GC=F":
@@ -165,9 +163,20 @@ def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
         if naver_gold:
             return df, naver_gold.price, estimated_dates, prev_close, True, naver_gold.traded_at, close_date
 
-    is_live = True
-    live_time = datetime.now().strftime("%m/%d %H:%M")
+    # For other yfinance tickers, use fast_info timestamp
+    try:
+        ticker_info = yf.Ticker(symbol)
+        # regularMarketTime gives the last trade timestamp
+        import datetime as dt
+        market_time = ticker_info.fast_info.get("regularMarketTime", None)
+        if market_time:
+            live_time = dt.datetime.fromtimestamp(market_time).strftime("%m/%d %H:%M")
+        else:
+            live_time = df.index[-1].strftime("%m/%d") + " (close)"
+    except Exception:
+        live_time = df.index[-1].strftime("%m/%d") + " (close)"
 
+    is_live = True
     return df, live_price, estimated_dates, prev_close, is_live, live_time, close_date
 
 
