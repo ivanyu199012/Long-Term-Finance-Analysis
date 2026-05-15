@@ -116,10 +116,11 @@ TICKERS_KR: list[TickerConfig] = [
         "symbol": "KRX_GOLD",
         "label": "금현물 (KRX)",
         "source": "krx_gold",
-        # Gold trades in tight ranges — all three MAs carry roughly equal
-        # importance.  Same weights as the international Gold (GC=F).
+        # KRX Gold reflects both gold price + USD/KRW FX, making it more
+        # volatile than international gold.  Wider fade thresholds account
+        # for the FX-driven deviations (calculated from 3yr historical data).
         "ma_weights": {50: 1.75, 100: 2.5, 200: 2.75},
-        "ma_fade_thresholds": {50: 0.05, 100: 0.08, 200: 0.12},
+        "ma_fade_thresholds": {50: 0.09, 100: 0.16, 200: 0.27},
         "drawdown_full_pct": 0.20,
         # Hedge allocation — mirrors international Gold allocation.
         "base_weight": 0.30,

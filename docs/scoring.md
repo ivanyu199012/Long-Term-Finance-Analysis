@@ -30,13 +30,24 @@ The buy-in score (0–10) is a rules-based heuristic combining three components:
 | MA100 | 2.0 | 0–14% above |
 | MA50 | 1.0 | 0–10% above |
 
-### Gold / 금현물 KRX (MA total: 7.0, DD full at 20%)
+### Gold (GC=F) (MA total: 7.0, DD full at 20%)
 
 | Component | Max pts | Fade threshold |
 |-----------|---------|----------------|
 | MA200 | 2.75 | 0–12% above |
 | MA100 | 2.5 | 0–8% above |
 | MA50 | 1.75 | 0–5% above |
+
+### 금현물 KRX (MA total: 7.0, DD full at 20%)
+
+KRX Gold includes USD/KRW FX volatility, so wider fade thresholds are used
+(calculated from 3-year historical data, 85th percentile of positive deviations).
+
+| Component | Max pts | Fade threshold |
+|-----------|---------|----------------|
+| MA200 | 2.75 | 0–27% above |
+| MA100 | 2.5 | 0–16% above |
+| MA50 | 1.75 | 0–9% above |
 
 ## Suggestion Thresholds
 
