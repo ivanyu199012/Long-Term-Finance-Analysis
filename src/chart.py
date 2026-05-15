@@ -16,7 +16,7 @@ import plotly.graph_objects as go
 from jinja2 import Environment, FileSystemLoader
 from plotly.subplots import make_subplots
 
-from src.config import BACKTEST_OUTPUT_FILE, MA_STYLES, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
+from src.config import BACKTEST_OUTPUT_FILE, COMPARISON_PAIRS, MA_STYLES, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
 from src.models import Allocation, BacktestComparison, PortfolioComparison, TickerData
 
 # ── Jinja2 environment ──────────────────────────────────────────────
@@ -104,6 +104,12 @@ def generate_chart(
             intl_chart = _build_chart_figure(tickers_intl)
             tab_contents.append(("intl", "International 🌐", f"{intl_cards}{intl_chart}"))
 
+        # Comparison tab
+        if tickers_kr and tickers_intl:
+            compare_html = _build_comparison_tab(tickers_kr, tickers_intl)
+            if compare_html:
+                tab_contents.append(("compare", "Comparison 🔄", compare_html))
+
         tab_html = _render_tab_layout(tab_contents)
         body_html = tab_html
     else:
@@ -189,6 +195,181 @@ def _render_tab_layout(tabs: list[tuple[str, str, str]]) -> str:
     """Render tabbed layout HTML using Jinja2 template."""
     template = _env.get_template("partials/tab_layout.html")
     return template.render(tabs=tabs)
+
+
+def _render_comparison_subtabs(pairs: list[tuple[str, str, str]]) -> str:
+    """Render comparison sub-tab layout using Jinja2 template."""
+    template = _env.get_template("partials/comparison_subtabs.html")
+    return template.render(pairs=pairs)
+
+
+# ── Comparison tab ──────────────────────────────────────────────────
+
+
+def _build_comparison_tab(
+    tickers_kr: Sequence[TickerData],
+    tickers_intl: Sequence[TickerData],
+) -> str:
+    """Build the full comparison tab content with sub-tabs for each pair."""
+    # Build lookup maps
+    kr_map = {td.symbol: td for td in tickers_kr}
+    intl_map = {td.symbol: td for td in tickers_intl}
+
+    pair_contents: list[tuple[str, str, str]] = []  # (id, label, html)
+
+    for pair in COMPARISON_PAIRS:
+        kr_td = kr_map.get(pair["kr_symbol"])
+        intl_td = intl_map.get(pair["intl_symbol"])
+        if not kr_td or not intl_td:
+            continue
+
+        # Score cards for the pair (2 cards side by side)
+        cards_html = _render_score_cards([kr_td, intl_td], allocations=None)
+        # Comparison chart (normalized price, ratio, score)
+        chart_html = _build_comparison_figure(kr_td, intl_td)
+
+        pair_id = pair["label"].lower().replace(" ", "_")
+        pair_contents.append((pair_id, pair["label"], f"{cards_html}{chart_html}"))
+
+    if not pair_contents:
+        return ""
+
+    return _render_comparison_subtabs(pair_contents)
+
+
+def _build_comparison_figure(kr_td: TickerData, intl_td: TickerData) -> str:
+    """Build a Plotly comparison chart for a KR/Intl pair.
+
+    Row 1: 100-day price view side by side (KR left, Intl right)
+    Row 2: Normalized price (both rebased to 100, overlaid)
+    Row 3: Score comparison (both score lines overlaid)
+    """
+    fig = make_subplots(
+        rows=3,
+        cols=2,
+        shared_xaxes=False,
+        row_heights=[0.40, 0.35, 0.25],
+        vertical_spacing=0.10,
+        horizontal_spacing=0.06,
+        subplot_titles=[
+            f"{kr_td.label} — {len(kr_td.tail)} Day View",
+            f"{intl_td.label} — {len(intl_td.tail)} Day View",
+            f"Normalized Price — {kr_td.label} vs {intl_td.label}",
+            "",  # empty (merged with col 1)
+            "Score Comparison",
+            "",  # empty (merged with col 1)
+        ],
+        specs=[
+            [{}, {}],
+            [{"colspan": 2}, None],
+            [{"colspan": 2}, None],
+        ],
+    )
+
+    # ── Row 1: 100-day price view side by side ──
+    # KR (left)
+    fig.add_trace(
+        go.Scatter(
+            x=kr_td.tail.index, y=kr_td.tail["Close"],
+            mode="lines", name=kr_td.label,
+            line=dict(color="#1976D2", width=1.5),
+            showlegend=False,
+        ),
+        row=1, col=1,
+    )
+    for window, ma_value in kr_td.moving_averages.items():
+        style = MA_STYLES[window]
+        pct = kr_td.ma_pct_diffs[window]
+        dash_map = {"--": "dash", "-.": "dashdot", ":": "dot"}
+        fig.add_hline(
+            y=ma_value, line_color=style.color,
+            line_dash=dash_map.get(style.linestyle, "solid"), line_width=1.2,
+            annotation_text=f"MA{window}: {ma_value:,.2f} ({pct:+.2f}%)",
+            annotation_font_size=8, annotation_position="top left",
+            row=1, col=1,
+        )
+    fig.update_yaxes(title_text="Price (KRW)", row=1, col=1)
+
+    # Intl (right)
+    fig.add_trace(
+        go.Scatter(
+            x=intl_td.tail.index, y=intl_td.tail["Close"],
+            mode="lines", name=intl_td.label,
+            line=dict(color="#F57C00", width=1.5),
+            showlegend=False,
+        ),
+        row=1, col=2,
+    )
+    for window, ma_value in intl_td.moving_averages.items():
+        style = MA_STYLES[window]
+        pct = intl_td.ma_pct_diffs[window]
+        dash_map = {"--": "dash", "-.": "dashdot", ":": "dot"}
+        fig.add_hline(
+            y=ma_value, line_color=style.color,
+            line_dash=dash_map.get(style.linestyle, "solid"), line_width=1.2,
+            annotation_text=f"MA{window}: {ma_value:,.2f} ({pct:+.2f}%)",
+            annotation_font_size=8, annotation_position="top left",
+            row=1, col=2,
+        )
+    fig.update_yaxes(title_text="Price (USD)", row=1, col=2)
+
+    # ── Row 2: Normalized price (overlaid, spans both columns) ──
+    kr_close = kr_td.tail["Close"]
+    intl_close = intl_td.tail["Close"]
+
+    kr_norm = (kr_close / kr_close.iloc[0]) * 100
+    intl_norm = (intl_close / intl_close.iloc[0]) * 100
+
+    fig.add_trace(
+        go.Scatter(
+            x=kr_norm.index, y=kr_norm.values,
+            mode="lines", name=kr_td.label,
+            line=dict(color="#1976D2", width=1.5),
+        ),
+        row=2, col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=intl_norm.index, y=intl_norm.values,
+            mode="lines", name=intl_td.label,
+            line=dict(color="#F57C00", width=1.5),
+        ),
+        row=2, col=1,
+    )
+    fig.update_yaxes(title_text="Normalized (base=100)", row=2, col=1)
+
+    # ── Row 3: Score comparison (spans both columns) ──
+    kr_score = kr_td.score_tail
+    intl_score = intl_td.score_tail
+
+    fig.add_trace(
+        go.Scatter(
+            x=kr_score.index, y=kr_score.values,
+            mode="lines", name=f"{kr_td.label} Score",
+            line=dict(color="#1976D2", width=1.2),
+        ),
+        row=3, col=1,
+    )
+    fig.add_trace(
+        go.Scatter(
+            x=intl_score.index, y=intl_score.values,
+            mode="lines", name=f"{intl_td.label} Score",
+            line=dict(color="#F57C00", width=1.2),
+        ),
+        row=3, col=1,
+    )
+    fig.update_yaxes(title_text="Score", range=[0, 10], row=3, col=1)
+
+    fig.update_layout(
+        height=900,
+        autosize=True,
+        template="plotly_white",
+        hovermode="x unified",
+        legend=dict(font=dict(size=10)),
+        margin=dict(t=40, b=30, r=60),
+    )
+
+    return fig.to_html(include_plotlyjs="cdn", full_html=False)
 
 
 # ── Plotly figure builders ──────────────────────────────────────────

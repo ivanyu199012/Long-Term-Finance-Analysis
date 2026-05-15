@@ -130,6 +130,15 @@ TICKERS_KR: list[TickerConfig] = [
 TICKERS: list[TickerConfig] = TICKERS_INTL + TICKERS_KR
 """Combined ticker list for backward compatibility."""
 
+# ── Comparison pairs ────────────────────────────────────────────────
+
+COMPARISON_PAIRS: list[dict[str, str]] = [
+    {"kr_symbol": "360750", "intl_symbol": "^GSPC", "label": "S&P 500"},
+    {"kr_symbol": "133690", "intl_symbol": "^NDX", "label": "NASDAQ 100"},
+    {"kr_symbol": "KRX_GOLD", "intl_symbol": "GC=F", "label": "Gold"},
+]
+"""Pairs of KR ↔ International tickers for the comparison tab."""
+
 # ── Technical-indicator settings ────────────────────────────────────
 
 MA_WINDOWS: list[int] = [50, 100, 200]

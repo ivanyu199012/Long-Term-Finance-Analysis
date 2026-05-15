@@ -1,0 +1,41 @@
+<style>
+.compare-btn {
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 600;
+    border: 2px solid #ddd;
+    border-radius: 6px;
+    background: #f5f5f5;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.compare-btn:hover { background: #e8e8e8; }
+.compare-btn.compare-active {
+    background: #7B1FA2;
+    color: #fff;
+    border-color: #7B1FA2;
+}
+</style>
+
+<div style="display:flex;justify-content:center;gap:8px;margin:12px 0 8px">
+{% for pair_id, pair_label, _ in pairs %}
+    <button class="compare-btn{{ ' compare-active' if loop.first else '' }}" onclick="switchCompareTab('{{ pair_id }}')" id="cbtn-{{ pair_id }}">{{ pair_label }}</button>
+{% endfor %}
+</div>
+
+{% for pair_id, _, content in pairs %}
+<div id="ctab-{{ pair_id }}" class="compare-panel" style="display:{{ 'block' if loop.first else 'none' }}">
+    {{ content }}
+</div>
+{% endfor %}
+
+<script>
+function switchCompareTab(pairId) {
+    document.querySelectorAll('.compare-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.compare-btn').forEach(b => b.classList.remove('compare-active'));
+    document.getElementById('ctab-' + pairId).style.display = 'block';
+    document.getElementById('cbtn-' + pairId).classList.add('compare-active');
+    window.dispatchEvent(new Event('resize'));
+}
+</script>
