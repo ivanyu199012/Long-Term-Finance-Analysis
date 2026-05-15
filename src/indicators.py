@@ -35,6 +35,33 @@ def score_to_multiplier(score: float) -> float:
     return 0.25
 
 
+def score_to_label(score: float) -> str:
+    """Map a buy-in score (0–10) to a suggestion label string.
+
+    Returns one of: "Aggressive", "Increase", "Regular", "Reduce", "Minimum".
+    """
+    mult = score_to_multiplier(score)
+    if mult >= 2.25:
+        return "Aggressive"
+    if mult >= 1.5:
+        return "Increase"
+    if mult >= 1.0:
+        return "Regular"
+    if mult >= 0.5:
+        return "Reduce"
+    return "Minimum"
+
+
+# Score threshold levels used for chart annotations and label mapping.
+SCORE_LEVELS: list[tuple[float, str]] = [
+    (8.5, "Aggressive"),
+    (6.5, "Increase"),
+    (4.5, "Regular"),
+    (2.5, "Reduce"),
+]
+"""Score thresholds paired with their suggestion labels."""
+
+
 def calc_rsi(series: pd.Series, period: int = 14) -> pd.Series:
     """Compute the Relative Strength Index using Wilder's EWM smoothing.
 
@@ -168,18 +195,7 @@ def score_to_suggestion(score: float, base_amount: float = 500_000.0) -> str:
         Base investment amount used to compute the suggestion amount.
     """
     multiplier = score_to_multiplier(score)
-
-    if multiplier >= 2.25:
-        label = "Aggressive buy-in"
-    elif multiplier >= 1.5:
-        label = "Increase buy-in"
-    elif multiplier >= 1.0:
-        label = "Regular buy-in"
-    elif multiplier >= 0.5:
-        label = "Reduce buy-in"
-    else:
-        label = "Minimum buy-in"
-
+    label = score_to_label(score) + " buy-in"
     amount = base_amount * multiplier
     return f"{label}<br> ({multiplier:.2f}x → ₩{amount:.2f})"
 

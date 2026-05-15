@@ -1,0 +1,79 @@
+<div style="font-family:system-ui,sans-serif;max-width:560px;margin:0 auto;padding:10px;font-size:14px">
+    <h2 style="color:#333;margin:0 0 2px;font-size:17px">FinAnalysis — Score Alert</h2>
+    <p style="color:#666;margin:0 0 6px;font-size:13px">{{ timestamp }} KST</p>
+
+    {% if is_repeat and score_changes %}
+    <div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:4px 8px;margin:6px 0;font-size:13px">
+        <b>⚠ Score update:</b>
+        {% for label, (old, new) in score_changes.items() %}
+        {{ label }} rose from {{ "%.1f"|format(old) }} to {{ "%.1f"|format(new) }}{{ ", " if not loop.last else "" }}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top:12px">
+        <div style="background:#eee;padding:3px 6px;font-size:14px;font-weight:600;margin-bottom:2px">
+            Score Summary
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+            <tr style="background:#f5f5f5">
+                <th style="padding:2px 4px;text-align:left;border-bottom:1px solid #ccc"></th>
+                <th style="padding:2px 4px;text-align:left;border-bottom:1px solid #ccc">Ticker</th>
+                <th style="padding:2px 4px;text-align:left;border-bottom:1px solid #ccc">Score</th>
+                <th style="padding:2px 4px;text-align:left;border-bottom:1px solid #ccc">Suggestion</th>
+                <th style="padding:2px 4px;text-align:left;border-bottom:1px solid #ccc">Price</th>
+            </tr>
+            {% for td in all_tickers %}
+            {% set is_triggered = td.label in triggered_labels %}
+            <tr style="{{ 'background:#E8F5E9;font-weight:600' if is_triggered else '' }}">
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "★" if is_triggered else "" }}</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ td.label }}</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "%.1f"|format(td.buy_score.score) }}/10</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ suggestion_label(td.buy_score.score) }}</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "{:,.0f}".format(td.current_price) }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div style="margin-top:12px">
+        <div style="background:#eee;padding:3px 6px;font-size:14px;font-weight:600;margin-bottom:2px">Recommended Buy-in
+        </div>
+        <table style="width:100%;border-collapse:collapse;font-size:13px">
+            {% for td in all_tickers %}
+            {% set is_triggered = td.label in triggered_labels %}
+            {% set mult = score_to_multiplier(td.buy_score.score) %}
+            {% set amount = base_amount * mult %}
+            <tr style="{{ 'background:#E8F5E9;font-weight:600' if is_triggered else '' }}">
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "★" if is_triggered else "" }} {{ td.label
+                    }}</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">₩{{ "{:,.0f}".format(amount) }}</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">({{ "%.2f"|format(mult) }}x, {{
+                    suggestion_label(td.buy_score.score) }})</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+
+    <div style="margin-top:12px">
+        <div style="background:#eee;padding:3px 6px;font-size:14px;font-weight:600;margin-bottom:2px">Score Breakdown
+        </div>
+        {% for td in triggered %}
+        {% set bs = td.buy_score %}
+        {% set ma_max = td.ma_weights.values() | sum %}
+        {% set latest_rsi = td.rsi.iloc[-1] | float %}
+        {% set dd_display = [bs.current_drawdown, 0] | min %}
+        <div style="margin:2px 0;padding:3px 6px;background:#f9f9f9;border-radius:3px;font-size:13px;line-height:1.4">
+            <b>{{ td.label }} ({{ "%.1f"|format(bs.score) }}/10):</b>
+            MA: {{ "%.1f"|format(bs.ma_score) }}/{{ "%.1f"|format(ma_max) }} ({% set below_mas = [] %}{% for w, v in
+            td.moving_averages.items() %}{% if td.current_price < v %}{% if below_mas.append("MA" ~ w) %}{% endif %}{%
+                endif %}{% endfor %}{{ "below " ~ below_mas | join(", ") if below_mas else " above all MAs" }}) | RSI:
+                {{ "%.1f" |format(bs.rsi_score) }}/1.5 ({{ "%.1f" |format(latest_rsi) }}) | DD: {{ "%.1f"
+                |format(bs.drawdown_score) }}/1.5 ({{ "%.1f" |format(dd_display * 100) }}%) </div>
+                {% endfor %}
+        </div>
+
+        <p style="font-size:11px;color:#888;margin:8px 0 0;border-top:1px solid #eee;padding-top:4px">
+            ⚠ Technical indicator score only — not financial advice.
+        </p>
+    </div>

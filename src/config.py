@@ -212,3 +212,23 @@ KRX_RATE_LIMIT_SLEEP: float = 0.2
 
 KRX_CACHE_PATH: pathlib.Path = PROJECT_ROOT / "data" / "gold_krx.csv"
 """Path to the KRX Gold CSV cache file."""
+
+# ── Alert settings ─────────────────────────────────────────────────
+
+ALERT_THRESHOLD: float = 6.5
+"""Score threshold that triggers an email alert (Increase buy-in level)."""
+
+ALERT_SCORE_DELTA: float = 0.3
+"""Minimum score increase from last emailed score to trigger a repeat email same day."""
+
+ALERT_EMAIL_TO: str = os.environ.get("ALERT_EMAIL_TO", "")
+"""Recipient email address for score alerts."""
+
+ALERT_EMAIL_FROM: str = os.environ.get("ALERT_EMAIL_FROM", "")
+"""Sender email address (Gmail) for score alerts."""
+
+ALERT_SMTP_PASSWORD: str = os.environ.get("ALERT_SMTP_PASSWORD", "")
+"""Gmail App Password for SMTP authentication."""
+
+ALERT_STATE_PATH: pathlib.Path = PROJECT_ROOT / "log" / "alert_state.json"
+"""Path to the alert state file (tracks last email time and scores)."""

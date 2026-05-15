@@ -17,6 +17,7 @@ from jinja2 import Environment, FileSystemLoader
 from plotly.subplots import make_subplots
 
 from src.config import BACKTEST_OUTPUT_FILE, COMPARISON_PAIRS, MA_STYLES, DRAWDOWN_MAX_SCORE, MONTHLY_BUDGET, OUTPUT_FILE, RSI_MAX_SCORE
+from src.indicators import SCORE_LEVELS
 from src.models import Allocation, BacktestComparison, PortfolioComparison, TickerData
 
 # ── Jinja2 environment ──────────────────────────────────────────────
@@ -551,10 +552,7 @@ def _add_score_traces(
         row=row, col=col,
     )
 
-    for level, label in [
-        (8.5, "Aggressive"), (6.5, "Increase"),
-        (4.5, "Regular"), (2.5, "Reduce"),
-    ]:
+    for level, label in SCORE_LEVELS:
         fig.add_hline(
             y=level, line_color="gray", line_dash="dot", line_width=0.6,
             annotation_text=label, annotation_font_size=7,

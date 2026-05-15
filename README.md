@@ -71,6 +71,7 @@ out/                 — Generated HTML output
 - [Backtest](docs/backtest.md) — strategies, metrics, and interpretation
 - [Korean data sources](docs/korean-data-sources.md) — pykrx + KRX Gold API setup
 - [Configuration](docs/configuration.md) — all settings explained
+- [Score alert](docs/alert.md) — automated email notifications
 
 ## Output
 
