@@ -40,55 +40,102 @@ def main() -> None:
 
 def _run_dashboard() -> None:
     """Fetch data for every configured ticker, render the chart, and open it."""
+    from concurrent.futures import ThreadPoolExecutor, as_completed
+
     print("=" * 60)
     print("  FinAnalysis — Technical Analysis Dashboard")
     print("=" * 60)
     print()
 
-    def _fetch_and_print(ticker_configs: list[dict], group_label: str) -> list:
-        """Fetch tickers and print summary for a group."""
-        results = []
-        if not ticker_configs:
-            return results
-        print(f"── {group_label} ──")
+    def _print_ticker_summary(td) -> None:
+        """Print detailed summary for a single ticker."""
+        bs = td.buy_score
+        rsi_val = float(td.rsi.iloc[-1])
+        ma_max = sum(td.ma_weights.values())
+        print(f"[{td.label}]")
+        print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {td.drawdown_full_pct:.0%})")
+
+        # Price display: show live/close for Korean tickers
+        if td.is_live_price and td.close_price is not None:
+            live_label = f"({td.live_price_time})" if td.live_price_time else "(live)"
+            close_label = f"({td.close_price_date})" if td.close_price_date else ""
+            print(f"  Price:  {td.current_price:>12,.2f} {live_label} | Close {close_label}: {td.close_price:,.2f}")
+        elif td.live_price_warning:
+            print(f"  Price:  {td.current_price:>12,.2f}")
+            print(f"  \033[33m⚠ {td.live_price_warning}\033[0m")
+        else:
+            print(f"  Price:  {td.current_price:>12,.2f}")
+
+        for w, ma in td.moving_averages.items():
+            pct = td.ma_pct_diffs[w]
+            above_below = "above" if pct > 0 else "below"
+            print(f"  MA{w}:  {ma:>12,.2f}  ({abs(pct):.2f}% {above_below})")
+        print(f"  RSI:    {rsi_val:>12.1f}")
+        print(f"  DD:     {min(bs.current_drawdown, 0):>11.1%}  (max: {bs.max_drawdown:.1%})")
+        print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score:.1f}/{ma_max:.1f}, RSI: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}, DD: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f})")
+        print(f"  → {bs.suggestion}")
+        if td.estimated_dates:
+            print(f"  \033[33m⚠ Estimated data for: {', '.join(td.estimated_dates)} (mean of prev close & live price)\033[0m")
         print()
-        for t in ticker_configs:
-            print(f"[{t['label']}] Downloading data for {t['symbol']}...")
+
+    # ── Fetch tickers ──
+    # yfinance is not thread-safe — those must run sequentially.
+    # Non-yfinance tickers (pykrx, krx_gold) can run in parallel.
+    # Both groups run concurrently with each other.
+    all_configs = TICKERS_INTL + TICKERS_KR
+    yf_configs = [t for t in all_configs if t.get("source", "yfinance") == "yfinance"]
+    other_configs = [t for t in all_configs if t.get("source", "yfinance") != "yfinance"]
+
+    n = len(all_configs)
+    print(f"Downloading {n} tickers...")
+
+    results_map: dict[str, object] = {}  # symbol → TickerData
+
+    def _fetch_yf_sequential() -> None:
+        """Fetch all yfinance tickers sequentially (not thread-safe)."""
+        for t in yf_configs:
             td = fetch_ticker(**t)
-            results.append(td)
+            results_map[t["symbol"]] = td
+            print(f"  ✓ {t['label']}")
 
-            bs = td.buy_score
-            rsi_val = float(td.rsi.iloc[-1])
-            ma_max = sum(td.ma_weights.values())
-            print(f"  Weights — MA: {ma_max:.1f}  RSI: {RSI_MAX_SCORE:.1f}  DD: {DRAWDOWN_MAX_SCORE:.1f}  (DD full at {td.drawdown_full_pct:.0%})")
+    # Run yfinance sequential batch + each non-yfinance ticker as separate threads
+    with ThreadPoolExecutor(max_workers=1 + len(other_configs)) as pool:
+        futures = []
+        futures.append(pool.submit(_fetch_yf_sequential))
+        for t in other_configs:
+            futures.append(pool.submit(fetch_ticker, **t))
 
-            # Price display: show live/close for Korean tickers
-            if td.is_live_price and td.close_price is not None:
-                live_label = f"({td.live_price_time})" if td.live_price_time else "(live)"
-                close_label = f"({td.close_price_date})" if td.close_price_date else ""
-                print(f"  Price:  {td.current_price:>12,.2f} {live_label} | Close {close_label}: {td.close_price:,.2f}")
-            elif td.live_price_warning:
-                print(f"  Price:  {td.current_price:>12,.2f}")
-                print(f"  \033[33m⚠ {td.live_price_warning}\033[0m")
+        # Wait for non-yfinance futures and collect results
+        for future in as_completed(futures):
+            if future == futures[0]:
+                # yfinance batch — results already in results_map
+                future.result()  # raise if exception
             else:
-                print(f"  Price:  {td.current_price:>12,.2f}")
+                td = future.result()
+                # Find the config that matches this result
+                for t in other_configs:
+                    if t["symbol"] == td.symbol:
+                        results_map[t["symbol"]] = td
+                        print(f"  ✓ {t['label']}")
+                        break
 
-            for w, ma in td.moving_averages.items():
-                pct = td.ma_pct_diffs[w]
-                above_below = "above" if pct > 0 else "below"
-                print(f"  MA{w}:  {ma:>12,.2f}  ({abs(pct):.2f}% {above_below})")
-            print(f"  RSI:    {rsi_val:>12.1f}")
-            print(f"  DD:     {min(bs.current_drawdown, 0):>11.1%}  (max: {bs.max_drawdown:.1%})")
-            print(f"  Score:  {bs.score:.1f}/10  (MA: {bs.ma_score:.1f}/{ma_max:.1f}, RSI: {bs.rsi_score:.1f}/{RSI_MAX_SCORE:.1f}, DD: {bs.drawdown_score:.1f}/{DRAWDOWN_MAX_SCORE:.1f})")
-            print(f"  → {bs.suggestion}")
-            if td.estimated_dates:
-                print(f"  \033[33m⚠ Estimated data for: {', '.join(td.estimated_dates)} (mean of prev close & live price)\033[0m")
-            print()
-        return results
+    print()
 
-    # Fetch both groups
-    tickers_intl = _fetch_and_print(TICKERS_INTL, "International (USD)")
-    tickers_kr = _fetch_and_print(TICKERS_KR, "Korean (KRW)")
+    # ── Print summaries grouped by market ──
+    tickers_intl = [results_map[t["symbol"]] for t in TICKERS_INTL]
+    tickers_kr = [results_map[t["symbol"]] for t in TICKERS_KR]
+
+    if tickers_intl:
+        print(f"── International (USD) ──")
+        print()
+        for td in tickers_intl:
+            _print_ticker_summary(td)
+
+    if tickers_kr:
+        print(f"── Korean (KRW) ──")
+        print()
+        for td in tickers_kr:
+            _print_ticker_summary(td)
 
     # Compute allocation for KR group only
     allocations = compute_allocation(tickers_kr, ticker_configs=TICKERS_KR) if tickers_kr else None

@@ -24,8 +24,11 @@ def download(symbol: str, period: str = "3y") -> pd.DataFrame:
     period:
         yfinance period string (e.g. '1y', '3y', '6mo').
     """
-    df = yf.download(symbol, period=period, auto_adjust=True)
+    df = yf.download(symbol, period=period, auto_adjust=True, progress=False)
     df.columns = df.columns.get_level_values(0)
+    # When yfinance is called concurrently, it may return duplicate column
+    # names after flattening.  Deduplicate to ensure df["Close"] is a Series.
+    df = df.loc[:, ~df.columns.duplicated()]
     return df
 
 

@@ -8,11 +8,16 @@ falls back to Naver's mobile chart API as an alternative data source.
 from __future__ import annotations
 
 import sys
+import warnings
 from datetime import datetime, timedelta
 
 import pandas as pd
 import requests
-from pykrx import stock
+
+# Suppress pkg_resources deprecation warning from pykrx
+with warnings.catch_warnings():
+    warnings.filterwarnings("ignore", message="pkg_resources is deprecated")
+    from pykrx import stock
 
 _NAVER_CHART_URL = (
     "https://m.stock.naver.com/front-api/external/chart/domestic/info"
