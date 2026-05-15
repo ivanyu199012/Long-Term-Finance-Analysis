@@ -1,0 +1,43 @@
+<div style="display:flex;justify-content:center;flex-wrap:wrap;margin:16px 8px 8px">
+{% for td in tickers %}
+{% set bs = td.buy_score %}
+{% set bg = score_color(bs.score) %}
+{% set latest_rsi = td.rsi.iloc[-1] | float %}
+{% set ma_max = td.ma_weights.values() | sum %}
+{% set dd_display = [td.buy_score.current_drawdown, 0] | min %}
+{% set alloc = alloc_map.get(td.label) %}
+<div style="flex:1;background:{{ bg }};color:#fff;border-radius:10px;padding:18px 24px;margin:0 8px;min-width:300px">
+    <div style="text-align:center;margin-bottom:12px">
+        <div style="font-size:20px;font-weight:700">{{ td.label }}</div>
+        <div style="font-size:42px;font-weight:800;line-height:1.1">{{ "%.1f"|format(bs.score) }}<span style="font-size:18px">/10</span></div>
+        <div style="font-size:14px">{{ bs.suggestion }}</div>
+    </div>
+    <div style="font-size:14px;line-height:1.7;background:rgba(0,0,0,0.25);border-radius:6px;padding:10px 14px">
+        {{ price_line(td) }}
+        <b>MA score: {{ "%.1f"|format(bs.ma_score) }}/{{ "%.1f"|format(ma_max) }}</b><br>
+        {% for w, v in td.moving_averages.items() %}
+        MA{{ w }}: {{ "{:,.2f}".format(v) }} ({{ "%+.2f"|format(td.ma_pct_diffs[w]) }}%) → +{{ "%.1f"|format(bs.ma_breakdown[w]) }}/{{ "%.1f"|format(td.ma_weights[w]) }}<br>
+        {% endfor %}
+        <b>RSI score: {{ "%.1f"|format(bs.rsi_score) }}/{{ "%.1f"|format(rsi_max_score) }}</b> (RSI: {{ "%.1f"|format(latest_rsi) }})<br>
+        <b>DD score: {{ "%.1f"|format(bs.drawdown_score) }}/{{ "%.1f"|format(drawdown_max_score) }}</b> (DD: {{ "%.1f"|format(dd_display * 100) }}%, max: {{ "%.1f"|format(bs.max_drawdown * 100) }}%, full at {{ "%.0f"|format(td.drawdown_full_pct * 100) }}%)
+        {% if alloc %}<br><b style="font-size:13px">Allocation: {{ "%.1f"|format(alloc.weight_pct) }}% → ₩{{ "{:,.0f}".format(alloc.amount) }}</b>{% endif %}
+    </div>
+</div>
+{% endfor %}
+</div>
+
+{% if allocations %}
+<div style="text-align:center;font-size:13px;color:#333;margin-top:10px;font-weight:600">
+    Monthly Budget: ₩{{ "{:,.0f}".format(monthly_budget) }}
+</div>
+{% endif %}
+
+<div style="text-align:center;font-size:11px;color:#888;margin-top:8px">
+    ⚠ Technical indicator score only — not financial advice
+</div>
+
+{% if estimated_warnings %}
+<div style="text-align:center;font-size:11px;color:#c62828;margin-top:4px">
+    ⚠ Estimated data (mean of prev close &amp; live price): {{ estimated_warnings }}
+</div>
+{% endif %}

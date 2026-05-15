@@ -8,34 +8,62 @@ from __future__ import annotations
 
 from typing import TYPE_CHECKING
 
+from src.indicators import score_to_multiplier
+
 if TYPE_CHECKING:
-    from src.models import Allocation, TickerData
+    from src.models import Allocation, TickerConfig, TickerData
 
 
-def score_to_multiplier(score: float) -> float:
-    """Map a buy-in score (0–10) to an investment multiplier.
+# Re-export for backward compatibility
+__all__ = ["score_to_multiplier", "compute_allocation", "enforce_weight_floors"]
 
-    Thresholds:
-        >= 8.5 → 2.25x (Aggressive)
-        >= 6.5 → 1.50x (Increase)
-        >= 4.5 → 1.00x (Regular)
-        >= 2.5 → 0.50x (Reduce)
-        <  2.5 → 0.25x (Minimum)
+
+def enforce_weight_floors(
+    weights: dict[str, float],
+    min_weights: dict[str, float],
+) -> dict[str, float]:
+    """Enforce minimum weight floors, redistributing excess proportionally.
+
+    Parameters
+    ----------
+    weights:
+        Normalized weights (sum to 1.0) keyed by label.
+    min_weights:
+        Minimum weight floor per label.
+
+    Returns
+    -------
+    dict[str, float]
+        Adjusted weights with floors enforced, still summing to 1.0.
     """
-    if score >= 8.5:
-        return 2.25
-    if score >= 6.5:
-        return 1.5
-    if score >= 4.5:
-        return 1.0
-    if score >= 2.5:
-        return 0.5
-    return 0.25
+    floored: dict[str, float] = {}
+    free_labels: list[str] = []
+    locked_total = 0.0
+
+    for label, w in weights.items():
+        if w < min_weights[label]:
+            floored[label] = min_weights[label]
+            locked_total += min_weights[label]
+        else:
+            free_labels.append(label)
+
+    if not floored:
+        return weights
+
+    remaining = 1.0 - locked_total
+    free_total = sum(weights[l] for l in free_labels)
+    for label in free_labels:
+        floored[label] = (
+            weights[label] / free_total * remaining
+            if free_total > 0
+            else remaining / len(free_labels)
+        )
+    return floored
 
 
 def compute_allocation(
     tickers: list[TickerData],
-    ticker_configs: list[dict] | None = None,
+    ticker_configs: list[TickerConfig] | None = None,
     monthly_budget: float | None = None,
 ) -> list[Allocation]:
     """Compute portfolio allocation from scores and base weights.
@@ -83,29 +111,7 @@ def compute_allocation(
     weights = {k: v / total for k, v in raw.items()}
 
     # Step 3: enforce minimum floors
-    # If any weight is below its floor, set it to the floor and
-    # redistribute the remaining budget proportionally.
-    floored: dict[str, float] = {}
-    free_labels: list[str] = []
-    locked_total = 0.0
-
-    for label, w in weights.items():
-        if w < min_weights[label]:
-            floored[label] = min_weights[label]
-            locked_total += min_weights[label]
-        else:
-            free_labels.append(label)
-
-    if floored:
-        remaining = 1.0 - locked_total
-        free_total = sum(weights[l] for l in free_labels)
-        for label in free_labels:
-            floored[label] = (
-                weights[label] / free_total * remaining
-                if free_total > 0
-                else remaining / len(free_labels)
-            )
-        weights = floored
+    weights = enforce_weight_floors(weights, min_weights)
 
     # Step 4: convert to amounts
     result = []

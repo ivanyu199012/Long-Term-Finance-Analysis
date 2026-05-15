@@ -7,11 +7,62 @@ contracts between modules (fetchers, indicators, allocation, backtest, chart).
 from __future__ import annotations
 
 from dataclasses import dataclass
+from typing import TypedDict
 
 import pandas as pd
 
 
+# ── Configuration types ─────────────────────────────────────────────
+
+
+class TickerConfig(TypedDict, total=False):
+    """Type-safe ticker configuration dictionary.
+
+    Defines the shape of ticker config entries used in TICKERS_INTL
+    and TICKERS_KR.
+
+    Required fields are enforced by convention (all tickers must have them).
+    Optional fields (live_price_source) default to None behavior when absent.
+    """
+
+    symbol: str
+    label: str
+    source: str
+    ma_weights: dict[int, float]
+    ma_fade_thresholds: dict[int, float]
+    drawdown_full_pct: float
+    base_weight: float
+    min_weight: float
+    live_price_source: str  # optional: "naver_intl_gold", etc.
+
+
+# ── Exceptions ──────────────────────────────────────────────────────
+
+
+class FetchError(ValueError):
+    """Raised when a data fetch fails unrecoverably."""
+
+    pass
+
+
 # ── Scoring & ticker data ───────────────────────────────────────────
+
+
+@dataclass
+class FetchResult:
+    """Result from a source-specific fetch helper.
+
+    Replaces the unnamed 7-tuple returned by _fetch_yfinance,
+    _fetch_pykrx, and _fetch_krx_gold.
+    """
+
+    df: pd.DataFrame
+    current_price: float
+    estimated_dates: list[str]
+    close_price: float | None
+    is_live: bool
+    live_time: str | None
+    close_date: str | None
 
 
 @dataclass
@@ -49,9 +100,9 @@ class TickerData:
     rsi: pd.Series
     tail: pd.DataFrame
     rsi_tail: pd.Series
-    estimated_dates: list[str] = None  # type: ignore[assignment]
-    score_tail: pd.Series = None  # type: ignore[assignment]
-    buy_score: BuyScore = None  # type: ignore[assignment]
+    estimated_dates: list[str] | None = None
+    score_tail: pd.Series | None = None
+    buy_score: BuyScore | None = None
     close_price: float | None = None
     is_live_price: bool = False
     live_price_warning: str | None = None

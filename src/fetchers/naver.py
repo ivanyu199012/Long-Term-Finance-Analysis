@@ -11,9 +11,10 @@ from dataclasses import dataclass
 
 import requests
 
+from src.config import NAVER_TIMEOUT
+
 _ETF_URL = "https://m.stock.naver.com/front-api/realTime/marketPrice?itemCodes={code}&endType=stock&stockType=domestic"
 _GOLD_URL = "https://m.stock.naver.com/front-api/marketIndex/metals?category=metals&reutersCode=M04020000"
-_TIMEOUT = 5
 
 
 @dataclass
@@ -41,7 +42,7 @@ def get_realtime_price_etf(ticker_code: str) -> LivePrice | None:
     try:
         resp = requests.get(
             url,
-            timeout=_TIMEOUT,
+            timeout=NAVER_TIMEOUT,
             headers={"User-Agent": "Mozilla/5.0"},
         )
         resp.raise_for_status()
@@ -78,7 +79,7 @@ def get_realtime_price_gold() -> LivePrice | None:
     try:
         resp = requests.get(
             _GOLD_URL,
-            timeout=_TIMEOUT,
+            timeout=NAVER_TIMEOUT,
             headers={"User-Agent": "Mozilla/5.0"},
         )
         resp.raise_for_status()
@@ -149,7 +150,7 @@ def get_realtime_price_intl_gold() -> LivePrice | None:
     try:
         resp = requests.get(
             _GOLD_URL,
-            timeout=_TIMEOUT,
+            timeout=NAVER_TIMEOUT,
             headers={"User-Agent": "Mozilla/5.0"},
         )
         resp.raise_for_status()

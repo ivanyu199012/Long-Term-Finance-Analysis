@@ -42,6 +42,17 @@ The Korean tickers will be fetched automatically.
 - **Rate limits:** None
 - **Caching:** Not needed (fast single-call API)
 
+### Naver Chart API Fallback
+
+When pykrx fails (network timeout, KRX site changes), the fetcher automatically falls back to Naver's mobile chart API:
+
+- **URL:** `https://m.stock.naver.com/front-api/external/chart/domestic/info?symbol={code}&requestType=1&startTime={start}&endTime={end}&timeframe=day`
+- **Response format:** List-of-lists (may be JSON or JS-literal with single quotes)
+- **Parsing:** Tries `json.loads()` first, falls back to `ast.literal_eval()` for single-quoted responses
+- **Columns:** `['날짜', '시가', '고가', '저가', '종가', '거래량', '외국인소진율']`
+
+This is an undocumented Naver frontend API — it may change without notice and is only used as a fallback.
+
 ## KRX Gold API
 
 - **Endpoint:** `https://data-dbg.krx.co.kr/svc/apis/gen/gold_bydd_trd`

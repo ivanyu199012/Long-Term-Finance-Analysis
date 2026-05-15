@@ -14,13 +14,14 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 
+from src.config import HTTP_TIMEOUT, KRX_CACHE_PATH, KRX_RATE_LIMIT_SLEEP
+from src.models import FetchError
+
 # ── Constants ───────────────────────────────────────────────────────
 
 _API_URL = "https://data-dbg.krx.co.kr/svc/apis/gen/gold_bydd_trd"
-_CACHE_PATH = "data/gold_krx.csv"
 _GOLD_PRODUCT_NAME = "금 99.99_1Kg"
 _EARLIEST_DATE = "20140324"  # KRX Gold data available from this date
-_RATE_LIMIT_SLEEP = 0.2  # seconds between API calls
 
 
 # ── Public API ──────────────────────────────────────────────────────
@@ -51,7 +52,7 @@ def download_krx_gold(auth_key: str, period_days: int = 1100) -> pd.DataFrame:
         If auth_key is empty or no data could be fetched.
     """
     if not auth_key:
-        raise ValueError(
+        raise FetchError(
             "KRX_AUTH_KEY is not set. Add it to your .env file or environment."
         )
 
@@ -93,7 +94,7 @@ def download_krx_gold(auth_key: str, period_days: int = 1100) -> pd.DataFrame:
         combined = cached_df
 
     if combined.empty:
-        raise ValueError("No KRX Gold data available. Check your API key and date range.")
+        raise FetchError("No KRX Gold data available. Check your API key and date range.")
 
     # Trim to requested period
     cutoff = datetime.today() - timedelta(days=period_days)
@@ -122,7 +123,7 @@ def get_live_price_krx_gold(auth_key: str) -> float:
         Latest close price in KRW per gram.
     """
     if not auth_key:
-        raise ValueError("KRX_AUTH_KEY is not set.")
+        raise FetchError("KRX_AUTH_KEY is not set.")
 
     for days_back in range(31):
         date = datetime.today() - timedelta(days=days_back)
@@ -136,7 +137,7 @@ def get_live_price_krx_gold(auth_key: str) -> float:
     if cached is not None and not cached.empty:
         return float(cached["Close"].iloc[-1])
 
-    raise ValueError("Could not get live KRX Gold price.")
+    raise FetchError("Could not get live KRX Gold price.")
 
 
 # ── Private helpers ─────────────────────────────────────────────────
@@ -172,7 +173,7 @@ def _fetch_date_range(
                 break
 
         current += timedelta(days=1)
-        time.sleep(_RATE_LIMIT_SLEEP)
+        time.sleep(KRX_RATE_LIMIT_SLEEP)
 
     return results
 
@@ -188,7 +189,7 @@ def _fetch_single_day(auth_key: str, date_str: str) -> float | None:
             _API_URL,
             headers={"AUTH_KEY": auth_key},
             params={"basDd": date_str},
-            timeout=10,
+            timeout=HTTP_TIMEOUT,
         )
         resp.raise_for_status()
         data = resp.json()
@@ -216,11 +217,11 @@ def _fetch_single_day(auth_key: str, date_str: str) -> float | None:
 
 def _load_cache() -> pd.DataFrame | None:
     """Load cached gold data from CSV, or return None if not found."""
-    if not os.path.exists(_CACHE_PATH):
+    if not KRX_CACHE_PATH.exists():
         return None
 
     try:
-        df = pd.read_csv(_CACHE_PATH, parse_dates=["Date"], index_col="Date")
+        df = pd.read_csv(KRX_CACHE_PATH, parse_dates=["Date"], index_col="Date")
         df = df.sort_index()
         return df
     except Exception:
@@ -229,5 +230,5 @@ def _load_cache() -> pd.DataFrame | None:
 
 def _save_cache(df: pd.DataFrame) -> None:
     """Save gold data to CSV cache."""
-    os.makedirs(os.path.dirname(_CACHE_PATH), exist_ok=True)
-    df.to_csv(_CACHE_PATH)
+    KRX_CACHE_PATH.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(KRX_CACHE_PATH)

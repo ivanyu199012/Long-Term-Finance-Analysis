@@ -24,6 +24,7 @@ Each ticker dict has:
 | `drawdown_full_pct` | Drawdown % at which full DD score is awarded |
 | `base_weight` | Base portfolio allocation weight (sums to 1.0 per group) |
 | `min_weight` | Minimum allocation floor |
+| `live_price_source` | (Optional) Alternative live price source (e.g., "naver_intl_gold") |
 
 ## Technical Indicator Settings
 
@@ -56,6 +57,16 @@ Each ticker dict has:
 |---------|---------|-------------|
 | `OUTPUT_FILE` | `out/combined_chart.html` | Dashboard output path |
 | `BACKTEST_OUTPUT_FILE` | `out/backtest_chart.html` | Backtest output path |
+
+## Network & Caching
+
+| Setting | Default | Description |
+|---------|---------|-------------|
+| `HTTP_TIMEOUT` | 10 | Default timeout (seconds) for external API requests |
+| `NAVER_TIMEOUT` | 5 | Timeout (seconds) for Naver real-time price calls |
+| `KRX_RATE_LIMIT_SLEEP` | 0.2 | Seconds between consecutive KRX API calls |
+| `KRX_CACHE_PATH` | `data/gold_krx.csv` | Path to KRX Gold CSV cache (resolved relative to project root) |
+| `PROJECT_ROOT` | (auto-detected) | Absolute path to project root directory |
 
 ## Chart Appearance
 

@@ -89,35 +89,33 @@ def _run_dashboard() -> None:
     n = len(all_configs)
     print(f"Downloading {n} tickers...")
 
-    results_map: dict[str, object] = {}  # symbol → TickerData
+    from src.models import TickerData as _TD
+    results_map: dict[str, _TD] = {}
 
-    def _fetch_yf_sequential() -> None:
-        """Fetch all yfinance tickers sequentially (not thread-safe)."""
+    def _fetch_yf_sequential() -> list[tuple[str, _TD]]:
+        """Fetch all yfinance tickers sequentially. Returns (symbol, data) pairs."""
+        results = []
         for t in yf_configs:
             td = fetch_ticker(**t)
-            results_map[t["symbol"]] = td
+            results.append((t["symbol"], td))
             print(f"  ✓ {t['label']}")
+        return results
 
     # Run yfinance sequential batch + each non-yfinance ticker as separate threads
     with ThreadPoolExecutor(max_workers=1 + len(other_configs)) as pool:
-        futures = []
-        futures.append(pool.submit(_fetch_yf_sequential))
-        for t in other_configs:
-            futures.append(pool.submit(fetch_ticker, **t))
+        yf_future = pool.submit(_fetch_yf_sequential)
+        other_futures = {pool.submit(fetch_ticker, **t): t for t in other_configs}
 
-        # Wait for non-yfinance futures and collect results
-        for future in as_completed(futures):
-            if future == futures[0]:
-                # yfinance batch — results already in results_map
-                future.result()  # raise if exception
-            else:
-                td = future.result()
-                # Find the config that matches this result
-                for t in other_configs:
-                    if t["symbol"] == td.symbol:
-                        results_map[t["symbol"]] = td
-                        print(f"  ✓ {t['label']}")
-                        break
+        # Collect non-yfinance results as they complete
+        for future in as_completed(other_futures):
+            t = other_futures[future]
+            td = future.result()
+            results_map[t["symbol"]] = td
+            print(f"  ✓ {t['label']}")
+
+        # Collect yfinance results (may already be done)
+        for symbol, td in yf_future.result():
+            results_map[symbol] = td
 
     print()
 

@@ -14,6 +14,27 @@ from src.models import BuyScore
 # ── Public API ──────────────────────────────────────────────────────
 
 
+def score_to_multiplier(score: float) -> float:
+    """Map a buy-in score (0–10) to an investment multiplier.
+
+    Thresholds:
+        >= 8.5 → 2.25x (Aggressive)
+        >= 6.5 → 1.50x (Increase)
+        >= 4.5 → 1.00x (Regular)
+        >= 2.5 → 0.50x (Reduce)
+        <  2.5 → 0.25x (Minimum)
+    """
+    if score >= 8.5:
+        return 2.25
+    if score >= 6.5:
+        return 1.5
+    if score >= 4.5:
+        return 1.0
+    if score >= 2.5:
+        return 0.5
+    return 0.25
+
+
 def calc_rsi(series: pd.Series, period: int = 14) -> pd.Series:
     """Compute the Relative Strength Index using Wilder's EWM smoothing.
 
@@ -146,8 +167,6 @@ def score_to_suggestion(score: float, base_amount: float = 500_000.0) -> str:
     base_amount:
         Base investment amount used to compute the suggestion amount.
     """
-    from src.allocation import score_to_multiplier
-
     multiplier = score_to_multiplier(score)
 
     if multiplier >= 2.25:

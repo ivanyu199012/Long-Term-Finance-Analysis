@@ -11,6 +11,7 @@
 |---------|---------|
 | pandas | Data manipulation, time series |
 | plotly | Interactive HTML chart generation |
+| jinja2 | HTML templating for dashboard/backtest output |
 | yfinance | Yahoo Finance data fetching |
 | pykrx | Korean stock/ETF market data |
 | requests | HTTP calls (KRX Gold API, Naver) |
@@ -51,3 +52,4 @@ uv run pytest tests/test_scoring.py -v
 - `pyproject.toml` defines the project metadata, dependencies, and pytest config
 - Entry point: `finanalysis = "src.main:main"`
 - Test paths configured to `tests/` with verbose output (`-v`)
+- Dependencies pinned to compatible ranges (e.g., `pandas>=2.0,<3.0`)

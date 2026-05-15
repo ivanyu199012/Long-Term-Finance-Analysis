@@ -1,0 +1,79 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1">
+    <title>FinAnalysis — Backtest</title>
+    <style>
+        body { margin: 0; padding: 20px; font-family: system-ui, sans-serif; background: #fafafa; }
+        table { border-collapse: collapse; width: 100%; margin: 8px 0; }
+        th, td { padding: 8px 12px; text-align: right; border-bottom: 1px solid #e0e0e0; }
+        th { background: #f5f5f5; font-weight: 600; font-size: 12px; color: #555; }
+        td { font-size: 13px; }
+        td:first-child, th:first-child { text-align: left; }
+        .edge-pos { color: #388E3C; font-weight: 700; }
+        .edge-neg { color: #F44336; font-weight: 700; }
+        .section { max-width: 900px; margin: 0 auto 24px; }
+        .section-title { font-size: 16px; font-weight: 700; color: #333; margin: 20px 0 8px; padding-bottom: 6px; border-bottom: 2px solid #ddd; }
+    </style>
+</head>
+<body>
+    <div style="text-align:center;font-size:22px;font-weight:700;margin:16px 0 8px;color:#333">
+        FinAnalysis — Backtest: Flat DCA vs Score-based DCA
+    </div>
+
+    {% for period, comps in comparisons_by_period %}
+    <div class="section">
+        <div class="section-title">Per-Ticker Backtest — {{ period }}</div>
+        <table>
+            <tr>
+                <th>Ticker</th><th>Months</th>
+                <th>Flat DCA Return</th><th>Score (norm) Return</th><th>Edge</th>
+                <th>Flat Max DD</th><th>Score Max DD</th>
+            </tr>
+            {% for comp in comps %}
+            {% set edge = comp.score_normalized.total_return_pct - comp.flat.total_return_pct %}
+            <tr>
+                <td><b>{{ comp.label }}</b></td>
+                <td>{{ comp.flat.n_months }}</td>
+                <td>{{ "%+.2f"|format(comp.flat.total_return_pct) }}%</td>
+                <td>{{ "%+.2f"|format(comp.score_normalized.total_return_pct) }}%</td>
+                <td class="{{ 'edge-pos' if edge > 0 else 'edge-neg' }}">{{ "%+.2f"|format(edge) }}pp</td>
+                <td>{{ "%.1f"|format(comp.flat.max_drawdown_pct) }}%</td>
+                <td>{{ "%.1f"|format(comp.score_normalized.max_drawdown_pct) }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endfor %}
+
+    {% if portfolio_comparisons %}
+    <div class="section">
+        <div class="section-title">Portfolio Backtest</div>
+        <table>
+            <tr>
+                <th>Period</th><th>Months</th>
+                <th>Flat Alloc Return</th><th>Score Alloc Return</th><th>Edge</th>
+                <th>Flat Max DD</th><th>Score Max DD</th>
+            </tr>
+            {% for pc in portfolio_comparisons %}
+            {% set edge = pc.score_alloc.total_return_pct - pc.flat.total_return_pct %}
+            <tr>
+                <td><b>{{ pc.period }}</b></td>
+                <td>{{ pc.flat.n_months }}</td>
+                <td>{{ "%+.2f"|format(pc.flat.total_return_pct) }}%</td>
+                <td>{{ "%+.2f"|format(pc.score_alloc.total_return_pct) }}%</td>
+                <td class="{{ 'edge-pos' if edge > 0 else 'edge-neg' }}">{{ "%+.2f"|format(edge) }}pp</td>
+                <td>{{ "%.1f"|format(pc.flat.max_drawdown_pct) }}%</td>
+                <td>{{ "%.1f"|format(pc.score_alloc.max_drawdown_pct) }}%</td>
+            </tr>
+            {% endfor %}
+        </table>
+    </div>
+    {% endif %}
+
+    <div style="text-align:center;font-size:11px;color:#888;margin:16px 0">
+        ⚠ Past performance does not guarantee future results. This is a simulation — not financial advice.
+    </div>
+</body>
+</html>

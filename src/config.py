@@ -11,6 +11,8 @@ from dataclasses import dataclass
 
 from dotenv import load_dotenv
 
+from src.models import TickerConfig
+
 load_dotenv()
 
 # ── API keys ────────────────────────────────────────────────────────
@@ -19,7 +21,7 @@ KRX_AUTH_KEY: str = os.environ.get("KRX_AUTH_KEY", "")
 
 # ── Ticker definitions ──────────────────────────────────────────────
 
-TICKERS_INTL: list[dict] = [
+TICKERS_INTL: list[TickerConfig] = [
     {
         "symbol": "^GSPC",
         "label": "S&P 500",
@@ -80,10 +82,12 @@ TICKERS_INTL: list[dict] = [
         "base_weight": 0.30,
         # Maintain a meaningful hedge position at all times.
         "min_weight": 0.20,
+        # Use Naver's international gold API for more reliable live price
+        "live_price_source": "naver_intl_gold",
     },
 ]
 
-TICKERS_KR: list[dict] = [
+TICKERS_KR: list[TickerConfig] = [
     {
         "symbol": "360750",
         "label": "TIGER S&P500",
@@ -123,7 +127,7 @@ TICKERS_KR: list[dict] = [
     },
 ]
 
-TICKERS: list[dict] = TICKERS_INTL + TICKERS_KR
+TICKERS: list[TickerConfig] = TICKERS_INTL + TICKERS_KR
 """Combined ticker list for backward compatibility."""
 
 # ── Technical-indicator settings ────────────────────────────────────
@@ -179,3 +183,22 @@ HEIGHT_RATIOS: list[int] = [3, 1]
 
 OUTPUT_FILE: str = "out/combined_chart.html"
 BACKTEST_OUTPUT_FILE: str = "out/backtest_chart.html"
+
+# ── Network & caching ──────────────────────────────────────────────
+
+import pathlib
+
+PROJECT_ROOT: pathlib.Path = pathlib.Path(__file__).resolve().parent.parent
+"""Absolute path to the project root directory."""
+
+HTTP_TIMEOUT: int = 10
+"""Default timeout (seconds) for HTTP requests to external APIs."""
+
+NAVER_TIMEOUT: int = 5
+"""Timeout (seconds) for Naver real-time price API calls."""
+
+KRX_RATE_LIMIT_SLEEP: float = 0.2
+"""Seconds to sleep between consecutive KRX API calls."""
+
+KRX_CACHE_PATH: pathlib.Path = PROJECT_ROOT / "data" / "gold_krx.csv"
+"""Path to the KRX Gold CSV cache file."""

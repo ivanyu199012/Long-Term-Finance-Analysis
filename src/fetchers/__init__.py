@@ -21,7 +21,7 @@ from src.config import (
     BASE_AMOUNT,
 )
 from src.indicators import calc_drawdown, calc_rsi, compute_buy_score, compute_score_series
-from src.models import TickerData
+from src.models import FetchError, FetchResult, TickerData
 
 
 def fetch_ticker(
@@ -62,13 +62,22 @@ def fetch_ticker(
         the most recent TAIL_DAYS slice for charting.
     """
     if source == "yfinance":
-        df, current_price, estimated_dates, close_price, is_live, live_time, close_date = _fetch_yfinance(symbol)
+        live_price_source = kwargs.get("live_price_source")
+        result = _fetch_yfinance(symbol, live_price_source=live_price_source)
     elif source == "pykrx":
-        df, current_price, estimated_dates, close_price, is_live, live_time, close_date = _fetch_pykrx(symbol)
+        result = _fetch_pykrx(symbol)
     elif source == "krx_gold":
-        df, current_price, estimated_dates, close_price, is_live, live_time, close_date = _fetch_krx_gold(symbol)
+        result = _fetch_krx_gold(symbol)
     else:
-        raise ValueError(f"Unknown source: {source!r}")
+        raise FetchError(f"Unknown source: {source!r}")
+
+    df = result.df
+    current_price = result.current_price
+    estimated_dates = result.estimated_dates
+    close_price = result.close_price
+    is_live = result.is_live
+    live_time = result.live_time
+    close_date = result.close_date
 
     # Generate warning if live price failed (Korean tickers only)
     live_price_warning: str | None = None
@@ -148,7 +157,7 @@ def fetch_ticker(
 # ── Source-specific fetch helpers ───────────────────────────────────
 
 
-def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
+def _fetch_yfinance(symbol: str, live_price_source: object = None) -> FetchResult:
     """Fetch data via yfinance with estimated-data handling."""
     import yfinance as yf
 
@@ -167,14 +176,17 @@ def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     # Close date: last row in the DataFrame (yesterday's completed session)
     close_date = df.index[-1].strftime("%m/%d") if not df.empty else None
 
-    # For gold (GC=F), try Naver's international gold API for a more reliable live price
-    if symbol == "GC=F":
+    # Try alternative live price source if configured
+    if live_price_source == "naver_intl_gold":
         from src.fetchers.naver import get_realtime_price_intl_gold
         naver_gold = get_realtime_price_intl_gold()
         if naver_gold:
-            return df, naver_gold.price, estimated_dates, prev_close, True, naver_gold.traded_at, close_date
+            return FetchResult(
+                df=df, current_price=naver_gold.price, estimated_dates=estimated_dates,
+                close_price=prev_close, is_live=True, live_time=naver_gold.traded_at, close_date=close_date,
+            )
 
-    # For other yfinance tickers, use fast_info timestamp
+    # Default: use yfinance fast_info timestamp
     try:
         ticker_info = yf.Ticker(symbol)
         # regularMarketTime gives the last trade timestamp
@@ -187,11 +199,13 @@ def _fetch_yfinance(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     except Exception:
         live_time = df.index[-1].strftime("%m/%d") + " (close)"
 
-    is_live = True
-    return df, live_price, estimated_dates, prev_close, is_live, live_time, close_date
+    return FetchResult(
+        df=df, current_price=live_price, estimated_dates=estimated_dates,
+        close_price=prev_close, is_live=True, live_time=live_time, close_date=close_date,
+    )
 
 
-def _fetch_pykrx(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
+def _fetch_pykrx(symbol: str) -> FetchResult:
     """Fetch data via pykrx (Korean ETFs) with real-time price from Naver."""
     from src.fetchers.naver import get_realtime_price_etf
     from src.fetchers.pykrx import download_pykrx, get_live_price_pykrx
@@ -213,10 +227,13 @@ def _fetch_pykrx(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     # Get close date from the last row of data
     close_date = df.index[-1].strftime("%m/%d") if not df.empty else None
 
-    return df, current_price, [], close_price, is_live, live_time, close_date
+    return FetchResult(
+        df=df, current_price=current_price, estimated_dates=[],
+        close_price=close_price, is_live=is_live, live_time=live_time, close_date=close_date,
+    )
 
 
-def _fetch_krx_gold(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
+def _fetch_krx_gold(symbol: str) -> FetchResult:
     """Fetch data via KRX Gold API with real-time price from Naver."""
     from src.config import KRX_AUTH_KEY
     from src.fetchers.krx_gold import download_krx_gold, get_live_price_krx_gold
@@ -239,4 +256,7 @@ def _fetch_krx_gold(symbol: str) -> tuple[pd.DataFrame, float, list[str]]:
     # Get close date from the last row of data
     close_date = df.index[-1].strftime("%m/%d") if not df.empty else None
 
-    return df, current_price, [], close_price, is_live, live_time, close_date
+    return FetchResult(
+        df=df, current_price=current_price, estimated_dates=[],
+        close_price=close_price, is_live=is_live, live_time=live_time, close_date=close_date,
+    )

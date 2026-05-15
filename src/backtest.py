@@ -8,7 +8,7 @@ from __future__ import annotations
 
 import pandas as pd
 
-from src.allocation import score_to_multiplier
+from src.allocation import enforce_weight_floors, score_to_multiplier
 from src.config import BASE_AMOUNT
 from src.indicators import calc_rsi, compute_score_series
 from src.models import (
@@ -276,23 +276,8 @@ def run_portfolio_backtest(
         weights = {k: v / total_raw for k, v in raw_weights.items()}
 
         # Enforce minimum floors
-        floored: dict[str, float] = {}
-        free_labels: list[str] = []
-        locked_total = 0.0
-        for am in asset_monthly:
-            lbl = am["label"]
-            if weights[lbl] < am["min_weight"]:
-                floored[lbl] = am["min_weight"]
-                locked_total += am["min_weight"]
-            else:
-                free_labels.append(lbl)
-
-        if floored:
-            remaining = 1.0 - locked_total
-            free_total = sum(weights[l] for l in free_labels)
-            for lbl in free_labels:
-                floored[lbl] = weights[lbl] / free_total * remaining if free_total > 0 else remaining / len(free_labels)
-            weights = floored
+        min_weights = {am["label"]: am["min_weight"] for am in asset_monthly}
+        weights = enforce_weight_floors(weights, min_weights)
 
         for am in asset_monthly:
             price = float(am["monthly_close"].iloc[i])

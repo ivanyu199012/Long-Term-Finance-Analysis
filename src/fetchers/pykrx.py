@@ -14,6 +14,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 import requests
 
+from src.config import HTTP_TIMEOUT
+from src.models import FetchError
+
 # Suppress pkg_resources deprecation warning from pykrx
 with warnings.catch_warnings():
     warnings.filterwarnings("ignore", message="pkg_resources is deprecated")
@@ -23,7 +26,6 @@ _NAVER_CHART_URL = (
     "https://m.stock.naver.com/front-api/external/chart/domestic/info"
     "?symbol={symbol}&requestType=1&startTime={start}&endTime={end}&timeframe=day"
 )
-_TIMEOUT = 10
 
 
 def download_pykrx(symbol: str, period_days: int = 1100) -> pd.DataFrame:
@@ -60,7 +62,7 @@ def download_pykrx(symbol: str, period_days: int = 1100) -> pd.DataFrame:
     except Exception as e:
         _warn(f"Naver fallback also failed for {symbol}: {e}")
 
-    raise ValueError(f"No data returned from pykrx or Naver for symbol {symbol}")
+    raise FetchError(f"No data returned from pykrx or Naver for symbol {symbol}")
 
 
 def _download_via_pykrx(symbol: str, period_days: int) -> pd.DataFrame:
@@ -141,7 +143,7 @@ def _download_via_naver(symbol: str, period_days: int) -> pd.DataFrame:
     url = _NAVER_CHART_URL.format(symbol=symbol, start=start_date, end=end_date)
     resp = requests.get(
         url,
-        timeout=_TIMEOUT,
+        timeout=HTTP_TIMEOUT,
         headers={"User-Agent": "Mozilla/5.0"},
     )
     resp.raise_for_status()
@@ -159,12 +161,12 @@ def _download_via_naver(symbol: str, period_days: int) -> pd.DataFrame:
         try:
             data = ast.literal_eval(text)
         except (ValueError, SyntaxError) as e:
-            raise ValueError(
+            raise FetchError(
                 f"Cannot parse Naver chart response for {symbol}: {e}"
             ) from e
 
     if not isinstance(data, list) or len(data) < 2:
-        raise ValueError(f"Unexpected Naver chart API response for {symbol}: expected list-of-lists")
+        raise FetchError(f"Unexpected Naver chart API response for {symbol}: expected list-of-lists")
 
     # First row is the header: ['날짜', '시가', '고가', '저가', '종가', '거래량', '외국인소진율']
     # Subsequent rows are data: ["20260102", 24535, 24630, 24480, 24620, 9724082, 0.0]
@@ -202,7 +204,7 @@ def _download_via_naver(symbol: str, period_days: int) -> pd.DataFrame:
             continue
 
     if not rows:
-        raise ValueError(f"No valid price rows parsed from Naver for {symbol}")
+        raise FetchError(f"No valid price rows parsed from Naver for {symbol}")
 
     df = pd.DataFrame(rows).set_index("Date").sort_index()
     df.index.name = "Date"
@@ -244,7 +246,7 @@ def get_live_price_pykrx(symbol: str) -> float:
     except Exception as e:
         _warn(f"Naver live price fallback also failed for {symbol}: {e}")
 
-    raise ValueError(f"No recent data from pykrx or Naver for symbol {symbol}")
+    raise FetchError(f"No recent data from pykrx or Naver for symbol {symbol}")
 
 
 def _warn(msg: str) -> None:

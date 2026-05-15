@@ -1,0 +1,41 @@
+<style>
+.tab-btn {
+    padding: 10px 24px;
+    font-size: 15px;
+    font-weight: 600;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    background: #f5f5f5;
+    color: #555;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.tab-btn:hover { background: #e8e8e8; }
+.tab-btn.tab-active {
+    background: #1976D2;
+    color: #fff;
+    border-color: #1976D2;
+}
+</style>
+
+<div style="display:flex;justify-content:center;gap:8px;margin:16px 0 8px">
+{% for tab_id, label, _ in tabs %}
+    <button class="tab-btn{{ ' tab-active' if loop.first else '' }}" onclick="switchTab('{{ tab_id }}')" id="btn-{{ tab_id }}">{{ label }}</button>
+{% endfor %}
+</div>
+
+{% for tab_id, _, content in tabs %}
+<div id="tab-{{ tab_id }}" class="tab-panel" style="display:{{ 'block' if loop.first else 'none' }}">
+    {{ content }}
+</div>
+{% endfor %}
+
+<script>
+function switchTab(tabId) {
+    document.querySelectorAll('.tab-panel').forEach(p => p.style.display = 'none');
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('tab-active'));
+    document.getElementById('tab-' + tabId).style.display = 'block';
+    document.getElementById('btn-' + tabId).classList.add('tab-active');
+    window.dispatchEvent(new Event('resize'));
+}
+</script>

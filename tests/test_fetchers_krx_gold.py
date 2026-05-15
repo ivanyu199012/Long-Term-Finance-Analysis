@@ -213,7 +213,7 @@ class TestCache:
         )
         df.index.name = "Date"
 
-        with patch("src.fetchers.krx_gold._CACHE_PATH", cache_path):
+        with patch("src.fetchers.krx_gold.KRX_CACHE_PATH", tmp_path / "test_gold.csv"):
             _save_cache(df)
             loaded = _load_cache()
 
@@ -222,6 +222,8 @@ class TestCache:
         assert loaded["Close"].iloc[-1] == 300.0
 
     def test_load_returns_none_when_no_file(self):
-        with patch("src.fetchers.krx_gold._CACHE_PATH", "/nonexistent/path.csv"):
+        from pathlib import Path
+
+        with patch("src.fetchers.krx_gold.KRX_CACHE_PATH", Path("/nonexistent/path.csv")):
             result = _load_cache()
         assert result is None

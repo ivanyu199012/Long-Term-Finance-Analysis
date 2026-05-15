@@ -44,17 +44,22 @@ On Windows: double-click `run.bat`.
 src/
 ├── main.py          — Entry point (dashboard + backtest)
 ├── config.py        — All configuration and ticker definitions
-├── models.py        — Dataclasses (BuyScore, TickerData, etc.)
-├── indicators.py    — Pure math (RSI, drawdown, score computation)
-├── allocation.py    — Score-to-multiplier mapping, portfolio allocation
-├── chart.py         — Plotly rendering and HTML output
+├── models.py        — TypedDict, dataclasses, exceptions (TickerConfig, FetchResult, BuyScore, etc.)
+├── indicators.py    — Pure math (RSI, drawdown, score computation, score_to_multiplier)
+├── allocation.py    — Portfolio allocation with weight floor enforcement
+├── chart.py         — Plotly rendering + Jinja2 template output
 ├── backtest.py      — Backtest engine
+├── templates/       — Jinja2 HTML templates
+│   ├── dashboard.html
+│   ├── backtest.html
+│   └── partials/    — Score cards, tab layout
 └── fetchers/
     ├── __init__.py  — Dispatcher (routes by source)
     ├── yfinance.py  — Yahoo Finance fetcher
-    ├── pykrx.py     — Korean ETF fetcher
+    ├── pykrx.py     — Korean ETF fetcher + Naver fallback
+    ├── naver.py     — Naver real-time price APIs
     └── krx_gold.py  — KRX Gold API + CSV caching
-tests/               — Scenario-based scoring + backtest + fetcher tests
+tests/               — Scenario-based scoring + backtest + fetcher + allocation tests
 docs/                — Detailed documentation
 data/                — Local CSV cache (KRX Gold)
 out/                 — Generated HTML output
