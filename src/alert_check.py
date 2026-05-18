@@ -26,6 +26,8 @@ from jinja2 import Environment, FileSystemLoader
 
 from src.allocation import compute_allocation
 from src.config import (
+    ALERT_AGGRESSIVE_DELTA,
+    ALERT_AGGRESSIVE_THRESHOLD,
     ALERT_EMAIL_FROM,
     ALERT_EMAIL_TO,
     ALERT_SCORE_DELTA,
@@ -120,9 +122,16 @@ def main() -> None:
         any_rose = False
         for td in triggered:
             old_score = state["scores"].get(td.label, 0.0)
-            if td.buy_score.score >= old_score + ALERT_SCORE_DELTA:
+            new_score = td.buy_score.score
+            # Aggressive zone (≥8.0): tighter delta of 0.1
+            # Normal zone (≥6.5): standard delta of 0.3
+            if new_score >= ALERT_AGGRESSIVE_THRESHOLD:
+                delta = ALERT_AGGRESSIVE_DELTA
+            else:
+                delta = ALERT_SCORE_DELTA
+            if new_score >= old_score + delta:
                 any_rose = True
-                score_changes[td.label] = (old_score, td.buy_score.score)
+                score_changes[td.label] = (old_score, new_score)
         if not any_rose:
             logger.info("Already sent today and no significant score increase. Exiting.")
             return

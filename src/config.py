@@ -221,6 +221,12 @@ ALERT_THRESHOLD: float = 6.5
 ALERT_SCORE_DELTA: float = 0.3
 """Minimum score increase from last emailed score to trigger a repeat email same day."""
 
+ALERT_AGGRESSIVE_THRESHOLD: float = 8.0
+"""Score threshold for aggressive alert tier (tighter delta)."""
+
+ALERT_AGGRESSIVE_DELTA: float = 0.1
+"""Minimum score increase for repeat alert when score is in aggressive zone (≥8.0)."""
+
 ALERT_EMAIL_TO: str = os.environ.get("ALERT_EMAIL_TO", "")
 """Recipient email address for score alerts."""
 
