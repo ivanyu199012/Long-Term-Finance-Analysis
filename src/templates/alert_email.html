@@ -6,7 +6,7 @@
     <div style="background:#FFF3E0;border-left:3px solid #FF9800;padding:4px 8px;margin:6px 0;font-size:13px">
         <b>⚠ Score update:</b>
         {% for label, (old, new) in score_changes.items() %}
-        {{ label }} rose from {{ "%.1f"|format(old) }} to {{ "%.1f"|format(new) }}{{ ", " if not loop.last else "" }}
+        {{ label }} rose from {{ "%.2f"|format(old) }} to {{ "%.2f"|format(new) }}{{ ", " if not loop.last else "" }}
         {% endfor %}
     </div>
     {% endif %}
@@ -28,7 +28,7 @@
             <tr style="{{ 'background:#E8F5E9;font-weight:600' if is_triggered else '' }}">
                 <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "★" if is_triggered else "" }}</td>
                 <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ td.label }}</td>
-                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "%.1f"|format(td.buy_score.score) }}/10</td>
+                <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "%.2f"|format(td.buy_score.score) }}/10</td>
                 <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ suggestion_label(td.buy_score.score) }}</td>
                 <td style="padding:1px 4px;border-bottom:1px solid #eee">{{ "{:,.0f}".format(td.current_price) }}</td>
             </tr>
@@ -64,11 +64,11 @@
         {% set latest_rsi = td.rsi.iloc[-1] | float %}
         {% set dd_display = [bs.current_drawdown, 0] | min %}
         <div style="margin:2px 0;padding:3px 6px;background:#f9f9f9;border-radius:3px;font-size:13px;line-height:1.4">
-            <b>{{ td.label }} ({{ "%.1f"|format(bs.score) }}/10):</b>
-            MA: {{ "%.1f"|format(bs.ma_score) }}/{{ "%.1f"|format(ma_max) }} ({% set below_mas = [] %}{% for w, v in
+            <b>{{ td.label }} ({{ "%.2f"|format(bs.score) }}/10):</b>
+            MA: {{ "%.2f"|format(bs.ma_score) }}/{{ "%.1f"|format(ma_max) }} ({% set below_mas = [] %}{% for w, v in
             td.moving_averages.items() %}{% if td.current_price < v %}{% if below_mas.append("MA" ~ w) %}{% endif %}{%
                 endif %}{% endfor %}{{ "below " ~ below_mas | join(", ") if below_mas else " above all MAs" }}) | RSI:
-                {{ "%.1f" |format(bs.rsi_score) }}/1.5 ({{ "%.1f" |format(latest_rsi) }}) | DD: {{ "%.1f"
+                {{ "%.2f" |format(bs.rsi_score) }}/1.5 ({{ "%.1f" |format(latest_rsi) }}) | DD: {{ "%.2f"
                 |format(bs.drawdown_score) }}/1.5 ({{ "%.1f" |format(dd_display * 100) }}%) </div>
                 {% endfor %}
         </div>

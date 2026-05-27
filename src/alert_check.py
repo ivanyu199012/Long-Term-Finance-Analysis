@@ -1,7 +1,7 @@
 """FinAnalysis — Score Alert Check.
 
 Scheduled script that checks Korean ticker scores and sends an email
-alert when any score crosses the threshold. Designed to run every 2 hours
+alert when any score crosses the threshold. Designed to run every 15 minutes
 during KRX market hours (09:00–15:30 KST) via Windows Task Scheduler.
 
 Usage:
@@ -14,11 +14,8 @@ from __future__ import annotations
 
 import json
 import logging
-import smtplib
 import sys
 from datetime import datetime, timedelta
-from email.mime.multipart import MIMEMultipart
-from email.mime.text import MIMEText
 from pathlib import Path
 from zoneinfo import ZoneInfo
 
@@ -28,10 +25,8 @@ from src.allocation import compute_allocation
 from src.config import (
     ALERT_AGGRESSIVE_DELTA,
     ALERT_AGGRESSIVE_THRESHOLD,
-    ALERT_EMAIL_FROM,
     ALERT_EMAIL_TO,
     ALERT_SCORE_DELTA,
-    ALERT_SMTP_PASSWORD,
     ALERT_STATE_PATH,
     ALERT_THRESHOLD,
     BASE_AMOUNT,
@@ -84,8 +79,8 @@ def main() -> None:
         return
 
     # Validate email config
-    if not ALERT_EMAIL_TO or not ALERT_EMAIL_FROM or not ALERT_SMTP_PASSWORD:
-        logger.error("Email settings not configured. Set ALERT_EMAIL_TO, ALERT_EMAIL_FROM, ALERT_SMTP_PASSWORD in .env")
+    if not ALERT_EMAIL_TO:
+        logger.error("Email settings not configured. Set ALERT_EMAIL_TO in .env")
         sys.exit(1)
 
     # Step 2: Fetch scores
@@ -95,7 +90,7 @@ def main() -> None:
         try:
             td = fetch_ticker(**t)
             tickers.append(td)
-            logger.info("  ✓ %s: %.1f/10", td.label, td.buy_score.score)
+            logger.info("  ✓ %s: %.2f/10", td.label, td.buy_score.score)
         except Exception as e:
             logger.warning("  ✗ %s: %s", t["label"], e)
 
@@ -106,7 +101,7 @@ def main() -> None:
     # Step 3: Check threshold (skip in debug mode — always send)
     triggered = [td for td in tickers if td.buy_score.score >= ALERT_THRESHOLD]
     if not debug and not triggered:
-        logger.info("No scores above threshold (%.1f). Exiting.", ALERT_THRESHOLD)
+        logger.info("No scores above threshold (%.2f). Exiting.", ALERT_THRESHOLD)
         return
     if debug and not triggered:
         triggered = tickers  # In debug mode, treat all as triggered
@@ -226,7 +221,7 @@ def _build_subject(
 ) -> str:
     """Build email subject line."""
     if is_repeat:
-        parts = [f"{label} ↑ (was {old:.1f} → now {new:.1f})" for label, (old, new) in score_changes.items()]
+        parts = [f"{label} ↑ (was {old:.2f} → now {new:.2f})" for label, (old, new) in score_changes.items()]
         return f"[FinAnalysis] Score rising: {', '.join(parts)}"
     else:
         names = ", ".join(td.label for td in triggered)
@@ -260,19 +255,15 @@ def _render_email(
 
 
 def _send_email(subject: str, html_body: str) -> None:
-    """Send HTML email via Gmail SMTP_SSL (port 465)."""
-    msg = MIMEMultipart("alternative")
-    msg["Subject"] = subject
-    msg["From"] = ALERT_EMAIL_FROM
-    msg["To"] = ALERT_EMAIL_TO
+    """Send HTML email via Outlook COM (pywin32)."""
+    import win32com.client
 
-    plain = f"{subject}\n\nPlease view this email in an HTML-capable client."
-    msg.attach(MIMEText(plain, "plain"))
-    msg.attach(MIMEText(html_body, "html"))
-
-    with smtplib.SMTP_SSL("smtp.gmail.com", 465, timeout=30) as server:
-        server.login(ALERT_EMAIL_FROM, ALERT_SMTP_PASSWORD)
-        server.sendmail(ALERT_EMAIL_FROM, ALERT_EMAIL_TO, msg.as_string())
+    outlook = win32com.client.Dispatch("Outlook.Application")
+    mail = outlook.CreateItem(0)
+    mail.To = ALERT_EMAIL_TO
+    mail.Subject = subject
+    mail.HTMLBody = html_body
+    mail.Send()
 
 
 if __name__ == "__main__":

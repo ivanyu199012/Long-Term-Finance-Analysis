@@ -568,9 +568,9 @@ def _add_score_traces(
     fig.add_trace(
         go.Scatter(
             x=[score_marker_date], y=[last_score],
-            mode="markers+text", name=f"Score: {last_score:.1f}",
+            mode="markers+text", name=f"Score: {last_score:.2f}",
             marker=dict(color="darkorange", size=8, symbol="diamond"),
-            text=[f"{last_score:.1f}"], textposition="top left",
+            text=[f"{last_score:.2f}"], textposition="top left",
             textfont=dict(size=10, color="darkorange"),
             legendgroup=f"score_latest_{col}", showlegend=show_legend,
         ),

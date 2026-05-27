@@ -96,10 +96,6 @@ def download_krx_gold(auth_key: str, period_days: int = 1100) -> pd.DataFrame:
     if combined.empty:
         raise FetchError("No KRX Gold data available. Check your API key and date range.")
 
-    # Trim to requested period
-    cutoff = datetime.today() - timedelta(days=period_days)
-    combined = combined[combined.index >= pd.Timestamp(cutoff)]
-
     # Save updated cache
     _save_cache(combined)
 
